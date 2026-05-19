@@ -1,0 +1,40 @@
+@model TrellYeahCapstone.Models.AddDepartmentViewModel
+
+@{
+    ViewData["Title"] = "Add Department";
+}
+
+<h1 class="h2 mb-4">Add department</h1>
+
+<form asp-action="AddDepartment" method="post" class="col-md-6">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="DepartmentName" class="form-label"></label>
+        <input asp-for="DepartmentName" class="form-control" placeholder="School of Computing" />
+        <span asp-validation-for="DepartmentName" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="CollegeId" class="form-label"></label>
+        <select asp-for="CollegeId" asp-items="Model.Colleges" class="form-select">
+            <option value="">Select a college</option>
+        </select>
+        <span asp-validation-for="CollegeId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="ChairUserId" class="form-label"></label>
+        <select asp-for="ChairUserId" asp-items="Model.Users" class="form-select">
+            <option value="">Select one user to be department chair</option>
+        </select>
+        <span asp-validation-for="ChairUserId" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Add department</button>
+    <a class="btn btn-link" asp-action="Index">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

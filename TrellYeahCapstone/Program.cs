@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using TrellYeahCapstone.Data;
+using TrellYeahCapstone.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,7 +34,7 @@ else
 app.UseHttpsRedirection();
 app.UseRouting();
 
-app.UseAuthorization(); // Dallen - Added line for role-based authorization.
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
@@ -49,25 +50,10 @@ app.MapRazorPages()
 // Dallen - This block of code ensures that roles are created and seeded in the database when the application starts.
 using (var scope = app.Services.CreateScope())
 {
-    //Creates the Roles
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     db.Database.Migrate();
 
-    //if the roles do not exist add them
-    string[] roles = {"Admin"};
-
-    foreach (var role in roles)
-    {
-        if (!await roleManager.RoleExistsAsync(role))
-        {
-            await roleManager.CreateAsync(new IdentityRole(role));
-        }
-    }
-
-
-//    await SeedData.InitializeAsync(scope.ServiceProvider); // Does not copy paste cleanly since we don't have the SeedData class
+    await SeedData.InitializeAsync(scope.ServiceProvider);
 }
 
 app.Run();
