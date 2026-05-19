@@ -8,13 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.7" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.7" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.7" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.2" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.7" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.7" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.7">
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.8">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
@@ -22,5 +22,7 @@
     <PackageReference Include="NuGet.Packaging" Version="7.6.0" />
     <PackageReference Include="NuGet.Protocol" Version="7.6.0" />
   </ItemGroup>
+
+  <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JsonSchema="https://www.schemastore.org/bun-lock.json" /></VisualStudio></ProjectExtensions>
 
 </Project>
