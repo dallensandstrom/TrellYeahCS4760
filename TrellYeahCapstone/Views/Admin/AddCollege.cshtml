@@ -1,0 +1,32 @@
+@model TrellYeahCapstone.Models.AddCollegeViewModel
+
+@{
+    ViewData["Title"] = "Add College";
+}
+
+<h1 class="h2 mb-4">Add college</h1>
+
+<form asp-action="AddCollege" method="post" class="col-md-6">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="mb-3">
+        <label asp-for="CollegeName" class="form-label"></label>
+        <input asp-for="CollegeName" class="form-control" placeholder="Engineering, Applied Science, and Technology" />
+        <span asp-validation-for="CollegeName" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="DeanUserId" class="form-label"></label>
+        <select asp-for="DeanUserId" asp-items="Model.Users" class="form-select">
+            <option value="">Select one user to be Dean</option>
+        </select>
+        <span asp-validation-for="DeanUserId" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Add college</button>
+    <a class="btn btn-link" asp-action="Index">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

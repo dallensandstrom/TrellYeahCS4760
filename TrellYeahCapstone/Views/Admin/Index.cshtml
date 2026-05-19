@@ -1,0 +1,76 @@
+@model TrellYeahCapstone.Models.AdminIndexViewModel
+
+@{
+    ViewData["Title"] = "Admin";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <h1 class="h2 mb-0">Admin</h1>
+    <div class="d-flex gap-2">
+        <a class="btn btn-primary" asp-controller="Admin" asp-action="AddCollege">Add college</a>
+        <a class="btn btn-outline-primary" asp-controller="Admin" asp-action="AddDepartment">Add department</a>
+    </div>
+</div>
+
+@if (TempData["StatusMessage"] is string statusMessage)
+{
+    <div class="alert alert-success" role="alert">@statusMessage</div>
+}
+
+<section class="mb-4">
+    <h2 class="h4">Colleges</h2>
+    @if (Model.Colleges.Any())
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Dean</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var college in Model.Colleges)
+                {
+                    <tr>
+                        <td>@college.Name</td>
+                        <td>@Model.UserEmails.GetValueOrDefault(college.DeanUserId, college.DeanUserId)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>No colleges have been added yet.</p>
+    }
+</section>
+
+<section>
+    <h2 class="h4">Departments</h2>
+    @if (Model.Departments.Any())
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>College</th>
+                    <th>Chair</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var department in Model.Departments)
+                {
+                    <tr>
+                        <td>@department.Name</td>
+                        <td>@department.College?.Name</td>
+                        <td>@Model.UserEmails.GetValueOrDefault(department.ChairUserId, department.ChairUserId)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>No departments have been added yet.</p>
+    }
+</section>
