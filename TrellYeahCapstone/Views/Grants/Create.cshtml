@@ -1,0 +1,28 @@
+@model TrellYeahCS4760.Models.Grant
+
+@{
+    ViewData["Title"] = "Submit Grant Request";
+}
+
+<h1>Submit Grant Request</h1>
+
+<form asp-action="Create" method="post">
+    <div class="form-group mb-3">
+        <label asp-for="Title" class="control-label"></label>
+        <input asp-for="Title" class="form-control" placeholder="Enter grant title" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="Description" class="control-label"></label>
+        <textarea asp-for="Description" class="form-control" rows="5" placeholder="Enter grant description"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Submit Grant Request</button>
+    <a asp-controller="UserDashboard" asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
