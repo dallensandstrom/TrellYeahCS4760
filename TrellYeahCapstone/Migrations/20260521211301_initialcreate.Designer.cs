@@ -9,18 +9,18 @@ using TrellYeahCapstone.Data;
 
 #nullable disable
 
-namespace TrellYeahCapstone.Data.Migrations
+namespace TrellYeahCapstone.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260519191754_AddCollegesAndDepartments")]
-    partial class AddCollegesAndDepartments
+    [Migration("20260521211301_initialcreate")]
+    partial class initialcreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.7")
+                .HasAnnotation("ProductVersion", "10.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -225,6 +225,35 @@ namespace TrellYeahCapstone.Data.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("TrellYeahCS4760.Models.Grant", b =>
+                {
+                    b.Property<int>("GrantId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("GrantId"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("GrantId");
+
+                    b.ToTable("Grants");
                 });
 
             modelBuilder.Entity("TrellYeahCapstone.Models.College", b =>
