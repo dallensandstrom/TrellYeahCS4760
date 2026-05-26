@@ -12,7 +12,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)// Dallen - options.SignIn.RequireConfirmedAccount boolean changes whether users require email confirmation
+builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = false)// Dallen - options.SignIn.RequireConfirmedAccount boolean changes whether users require email confirmation ~ changed <IdentityUser> to custom <ApplicationUser>
     .AddRoles<IdentityRole>() //Dallen - Used for role-based authorization.
     .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddControllersWithViews();

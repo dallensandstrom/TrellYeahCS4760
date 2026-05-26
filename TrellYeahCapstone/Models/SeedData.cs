@@ -9,7 +9,7 @@ namespace TrellYeahCapstone.Models
         public static async Task InitializeAsync(IServiceProvider serviceProvider)
         {
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-            var userManager = serviceProvider.GetRequiredService<UserManager<IdentityUser>>();
+            var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             var db = serviceProvider.GetRequiredService<ApplicationDbContext>();
 
             await SeedRolesAsync(roleManager);
@@ -34,17 +34,19 @@ namespace TrellYeahCapstone.Models
             }
         }
 
-        private static async Task SeedAdminUserAsync(UserManager<IdentityUser> userManager)
+        private static async Task SeedAdminUserAsync(UserManager<ApplicationUser> userManager)
         {
             var adminEmail = "admin@4760weber.edu";
             var adminUser = await userManager.FindByEmailAsync(adminEmail);
 
             if (adminUser == null)
             {
-                adminUser = new IdentityUser
+                adminUser = new ApplicationUser
                 {
                     UserName = adminEmail,
                     Email = adminEmail,
+                    FirstName = "Admin",
+                    LastName = "User",
                     EmailConfirmed = true
                 };
 
@@ -57,9 +59,9 @@ namespace TrellYeahCapstone.Models
             }
         }
 
-        private static async Task<List<IdentityUser>> SeedRegularUsersAsync(UserManager<IdentityUser> userManager)
+        private static async Task<List<ApplicationUser>> SeedRegularUsersAsync(UserManager<ApplicationUser> userManager)
         {
-            var seedUsers = new List<IdentityUser>();
+            var seedUsers = new List<ApplicationUser>();
 
             for (var i = 1; i <= 6; i++)
             {
@@ -68,10 +70,12 @@ namespace TrellYeahCapstone.Models
 
                 if (seedUser == null)
                 {
-                    seedUser = new IdentityUser
+                    seedUser = new ApplicationUser
                     {
                         UserName = userEmail,
                         Email = userEmail,
+                        FirstName = "Regular",
+                        LastName = "User",
                         EmailConfirmed = true
                     };
 
@@ -84,7 +88,7 @@ namespace TrellYeahCapstone.Models
             return seedUsers;
         }
 
-        private static async Task SeedCollegesAsync(ApplicationDbContext db, List<IdentityUser> seedUsers)
+        private static async Task SeedCollegesAsync(ApplicationDbContext db, List<ApplicationUser> seedUsers)
         {
             var collegeSeedData = new[]
             {
@@ -114,7 +118,7 @@ namespace TrellYeahCapstone.Models
             await db.SaveChangesAsync();
         }
 
-        private static async Task SeedDepartmentsAsync(ApplicationDbContext db, List<IdentityUser> seedUsers)
+        private static async Task SeedDepartmentsAsync(ApplicationDbContext db, List<ApplicationUser> seedUsers)
         {
             var engineeringCollege = await db.Colleges.FirstAsync(c => c.Name == "engeneering");
             var appliedScienceCollege = await db.Colleges.FirstAsync(c => c.Name == "applied science");

@@ -5,7 +5,7 @@ using TrellYeahCS4760.Models;
 
 namespace TrellYeahCapstone.Data
 {
-    public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : IdentityDbContext(options)
+    public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : IdentityDbContext<ApplicationUser>(options)
     {
         public DbSet<College> Colleges { get; set; }
 
