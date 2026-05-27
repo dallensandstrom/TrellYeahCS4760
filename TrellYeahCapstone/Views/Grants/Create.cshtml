@@ -7,22 +7,120 @@
 <h1>Submit Grant Request</h1>
 
 <form asp-action="Create" method="post">
-    <div class="form-group mb-3">
-        <label asp-for="Title" class="control-label"></label>
-        <input asp-for="Title" class="form-control" placeholder="Enter grant title" />
+    <div class="mb-3">
+        <label asp-for="ProjectDirectorUserId" class="form-label"></label>
+        <select asp-for="ProjectDirectorUserId"
+                asp-items="Model.UserOptions"
+                class="form-select"
+                id="projectDirectorSelect">
+        </select>
+        <span asp-validation-for="ProjectDirectorUserId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <strong>College:</strong>
+        <span id="projectDirectorCollege">Loading...</span>
+        <br />
+        <strong>Department:</strong>
+        <span id="projectDirectorDepartment">Loading...</span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="PrincipalInvestigatorUserId" class="form-label"></label>
+        <select asp-for="PrincipalInvestigatorUserId"
+                asp-items="Model.UserOptions"
+                class="form-select">
+        </select>
+        <span asp-validation-for="PrincipalInvestigatorUserId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Title" class="form-label"></label>
+        <input asp-for="Title" class="form-control" />
         <span asp-validation-for="Title" class="text-danger"></span>
     </div>
 
-    <div class="form-group mb-3">
-        <label asp-for="Description" class="control-label"></label>
-        <textarea asp-for="Description" class="form-control" rows="5" placeholder="Enter grant description"></textarea>
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control" rows="4"></textarea>
         <span asp-validation-for="Description" class="text-danger"></span>
     </div>
 
-    <button type="submit" class="btn btn-primary">Submit Grant Request</button>
-    <a asp-controller="UserDashboard" asp-action="Index" class="btn btn-secondary">Cancel</a>
+    <div class="mb-3">
+        <label asp-for="Justification" class="form-label"></label>
+        <textarea asp-for="Justification" class="form-control" rows="4"></textarea>
+        <span asp-validation-for="Justification" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="WeberStateStudentsBenefited" class="form-label"></label>
+        <input asp-for="WeberStateStudentsBenefited" class="form-control" min="0" />
+        <span asp-validation-for="WeberStateStudentsBenefited" class="text-danger"></span>
+    </div>
+
+    <div class="form-check mb-3">
+        <input asp-for="BenefitsMultipleDepartments"
+               class="form-check-input"
+               id="benefitsMultipleDepartmentsCheck" />
+        <label asp-for="BenefitsMultipleDepartments" class="form-check-label"></label>
+    </div>
+
+    <div class="mb-3" id="departmentCountSection">
+        <label asp-for="NumberOfDepartmentsBenefited" class="form-label"></label>
+        <input asp-for="NumberOfDepartmentsBenefited" class="form-control" min="2" />
+        <span asp-validation-for="NumberOfDepartmentsBenefited" class="text-danger"></span>
+    </div>
+
+    <div class="form-check mb-3">
+        <input asp-for="UsesHumanSubjects" class="form-check-input" />
+        <label asp-for="UsesHumanSubjects" class="form-check-label"></label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        Submit Grant Request
+    </button>
+
+    <a asp-controller="UserDashboard" asp-action="Index" class="btn btn-secondary">
+        Cancel
+    </a>
 </form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        const benefitsMultipleDepartmentsCheck = document.getElementById('benefitsMultipleDepartmentsCheck');
+        const departmentCountSection = document.getElementById('departmentCountSection');
+
+        function toggleDepartmentCount() {
+            departmentCountSection.style.display =
+                benefitsMultipleDepartmentsCheck.checked ? 'block' : 'none';
+        }
+
+        benefitsMultipleDepartmentsCheck.addEventListener('change', toggleDepartmentCount);
+        toggleDepartmentCount();
+
+        const projectDirectorSelect = document.getElementById('projectDirectorSelect');
+        const collegeSpan = document.getElementById('projectDirectorCollege');
+        const departmentSpan = document.getElementById('projectDirectorDepartment');
+
+        async function loadProjectDirectorInfo() {
+            const userId = projectDirectorSelect.value;
+
+            if (!userId) {
+                collegeSpan.textContent = 'Not assigned';
+                departmentSpan.textContent = 'Not assigned';
+                return;
+            }
+
+            const response = await fetch(`/Grants/GetUserCollegeAndDepartment?userId=${userId}`);
+            const data = await response.json();
+
+            collegeSpan.textContent = data.college;
+            departmentSpan.textContent = data.department;
+        }
+
+        projectDirectorSelect.addEventListener('change', loadProjectDirectorInfo);
+        loadProjectDirectorInfo();
+    </script>
 }
