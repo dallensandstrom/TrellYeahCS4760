@@ -1,22 +1,63 @@
-﻿@{
-    ViewData["Title"] = "User Dashboard";
-}
+﻿@model IEnumerable<TrellYeahCS4760.Models.Grant>
 
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        @TempData["SuccessMessage"]
-        <button type="button"
-                class="btn-close"
-                data-bs-dismiss="alert">
-        </button>
-    </div>
+@{
+    ViewData["Title"] = "User Dashboard";
 }
 
 <h1>User Dashboard</h1>
 
-<p>Welcome to your dashboard.</p>
-
-<a asp-controller="Grants" asp-action="Create" class="btn btn-primary">
-    Submit Grant Request
+<a asp-controller="Grants" asp-action="Create" class="btn btn-primary mb-3">
+    Start New Grant Application
 </a>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        You have not started any grant applications yet.
+    </div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Submitted</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var grant in Model)
+            {
+                <tr>
+                    <td>@grant.Title</td>
+                    <td>@grant.Status</td>
+                    <td>
+                        @(grant.SubmittedAt.HasValue
+                            ? grant.SubmittedAt.Value.ToString("MMM d, yyyy h:mm tt")
+                            : "Not submitted")
+                    </td>
+                    <td>
+                        <a asp-controller="Grants" asp-action="Details" asp-route-id="@grant.GrantId" class="btn btn-sm btn-outline-secondary">
+                            View
+                        </a>
+
+                        @if (grant.Status != "Submitted")
+                        {
+                            <a asp-controller="Grants" asp-action="Edit" asp-route-id="@grant.GrantId" class="btn btn-sm btn-primary">
+                                Continue Editing
+                            </a>
+                        }
+                        else
+                        {
+                            <button class="btn btn-sm btn-outline-secondary" disabled>
+                                Locked
+                            </button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
