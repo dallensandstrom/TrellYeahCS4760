@@ -45,7 +45,31 @@ namespace TrellYeahCS4760.Models
         [Display(Name = "Does this project use human subjects?")]
         public bool UsesHumanSubjects { get; set; }
 
+        [StringLength(500)]
+        public string? SupportingDocument1Path { get; set; }
+
+        [StringLength(500)]
+        public string? SupportingDocument2Path { get; set; }
+
+        [StringLength(500)]
+        public string? SupportingDocument3Path { get; set; }
+
+        [StringLength(500)]
+        public string? IRBApprovalFilePath { get; set; }
+
         [NotMapped]
         public List<SelectListItem> UserOptions { get; set; } = new();
+
+        [NotMapped]
+        public IFormFile? SupportingDocument1 { get; set; }
+
+        [NotMapped]
+        public IFormFile? SupportingDocument2 { get; set; }
+
+        [NotMapped]
+        public IFormFile? SupportingDocument3 { get; set; }
+
+        [NotMapped]
+        public IFormFile? IRBApprovalFile { get; set; }
     }
 }
