@@ -14,5 +14,9 @@ namespace TrellYeahCapstone.Models
 
         public int? CollegeId { get; set; }
         public int? DepartmentId { get; set; }
+
+        public bool IsArccCommitteeMember { get; set; }
+
+        public bool IsArccCommitteeChair { get; set; }
     }
 }

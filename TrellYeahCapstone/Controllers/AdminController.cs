@@ -32,10 +32,91 @@ namespace TrellYeahCapstone.Controllers
                     .OrderBy(department => department.Name)
                     .ToListAsync(),
                 UserEmails = await _userManager.Users
-                    .ToDictionaryAsync(user => user.Id, user => user.Email ?? user.UserName ?? user.Id)
+                    .ToDictionaryAsync(user => user.Id, user => user.Email ?? user.UserName ?? user.Id),
+                ArccCommitteeMembers = await _userManager.Users
+                    .Where(user => user.IsArccCommitteeMember)
+                    .OrderBy(user => user.LastName)
+                    .ThenBy(user => user.FirstName)
+                    .ThenBy(user => user.Email)
+                    .ToListAsync(),
+                AvailableArccUsers = await _userManager.Users
+                    .Where(user => !user.IsArccCommitteeMember)
+                    .OrderBy(user => user.LastName)
+                    .ThenBy(user => user.FirstName)
+                    .ThenBy(user => user.Email)
+                    .ToListAsync()
             };
 
             return View(viewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddArccCommitteeMember(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+            {
+                TempData["StatusMessage"] = "User could not be found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            user.IsArccCommitteeMember = true;
+            await _userManager.UpdateAsync(user);
+
+            TempData["StatusMessage"] = $"{GetUserDisplayName(user)} was added to the ARCC committee.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveArccCommitteeMember(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+            {
+                TempData["StatusMessage"] = "User could not be found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            user.IsArccCommitteeMember = false;
+            user.IsArccCommitteeChair = false;
+            await _userManager.UpdateAsync(user);
+
+            TempData["StatusMessage"] = $"{GetUserDisplayName(user)} was removed from the ARCC committee.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetArccCommitteeChair(string userId)
+        {
+            var selectedUser = await _userManager.FindByIdAsync(userId);
+
+            if (selectedUser == null || !selectedUser.IsArccCommitteeMember)
+            {
+                TempData["StatusMessage"] = "Select an existing ARCC committee member to be chair.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var currentChairs = await _userManager.Users
+                .Where(user => user.IsArccCommitteeChair)
+                .ToListAsync();
+
+            foreach (var chair in currentChairs)
+            {
+                chair.IsArccCommitteeChair = false;
+                await _userManager.UpdateAsync(chair);
+            }
+
+            selectedUser.IsArccCommitteeMember = true;
+            selectedUser.IsArccCommitteeChair = true;
+            await _userManager.UpdateAsync(selectedUser);
+
+            TempData["StatusMessage"] = $"{GetUserDisplayName(selectedUser)} is now the ARCC committee chair.";
+            return RedirectToAction(nameof(Index));
         }
 
         public async Task<IActionResult> AddCollege()
@@ -129,6 +210,15 @@ namespace TrellYeahCapstone.Controllers
                 Value = college.Id.ToString(),
                 Text = college.Name
             }));
+        }
+
+        private static string GetUserDisplayName(ApplicationUser user)
+        {
+            var fullName = $"{user.FirstName} {user.LastName}".Trim();
+
+            return string.IsNullOrWhiteSpace(fullName)
+                ? user.Email ?? user.UserName ?? user.Id
+                : $"{fullName} ({user.Email ?? user.UserName})";
         }
     }
 }

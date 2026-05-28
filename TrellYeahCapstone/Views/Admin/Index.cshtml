@@ -18,6 +18,94 @@
 }
 
 <section class="mb-4">
+    <h2 class="h4">ARCC Committee</h2>
+
+    <div class="mb-4">
+        <h3 class="h5">Existing members</h3>
+        @if (Model.ArccCommitteeMembers.Any())
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Chair</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model.ArccCommitteeMembers)
+                    {
+                        <tr>
+                            <td>@($"{user.FirstName} {user.LastName}".Trim())</td>
+                            <td>@(user.Email ?? user.UserName)</td>
+                            <td>
+                                @if (user.IsArccCommitteeChair)
+                                {
+                                    <span class="badge bg-primary">Chair</span>
+                                }
+                                else
+                                {
+                                    <form asp-action="SetArccCommitteeChair" method="post">
+                                        <input type="hidden" name="userId" value="@user.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">Make chair</button>
+                                    </form>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <form asp-action="RemoveArccCommitteeMember" method="post">
+                                    <input type="hidden" name="userId" value="@user.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p>No ARCC committee members have been added yet.</p>
+        }
+    </div>
+
+    <div>
+        <h3 class="h5">Add members</h3>
+        @if (Model.AvailableArccUsers.Any())
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model.AvailableArccUsers)
+                    {
+                        <tr>
+                            <td>@($"{user.FirstName} {user.LastName}".Trim())</td>
+                            <td>@(user.Email ?? user.UserName)</td>
+                            <td class="text-end">
+                                <form asp-action="AddArccCommitteeMember" method="post">
+                                    <input type="hidden" name="userId" value="@user.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-success">Add to committee</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p>All users are currently on the ARCC committee.</p>
+        }
+    </div>
+</section>
+
+<section class="mb-4">
     <h2 class="h4">Colleges</h2>
     @if (Model.Colleges.Any())
     {
