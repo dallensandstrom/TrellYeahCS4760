@@ -14,13 +14,18 @@ namespace TrellYeahCapstone.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IWebHostEnvironment _webHostEnvironment;
+        private const long MaxFileSize = 5 * 1024 * 1024; // 5MB
+        private readonly string[] AllowedExtensions = { ".pdf", ".doc", ".docx", ".xls", ".xlsx" };
 
         public GrantsController(
             ApplicationDbContext context,
-            UserManager<ApplicationUser> userManager)
+            UserManager<ApplicationUser> userManager,
+            IWebHostEnvironment webHostEnvironment)
         {
             _context = context;
             _userManager = userManager;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         public async Task<IActionResult> Create()
@@ -49,21 +54,124 @@ namespace TrellYeahCapstone.Controllers
                     "Enter how many departments will benefit.");
             }
 
+            // Validate IRB file requirement when using human subjects
+            if (grant.UsesHumanSubjects && grant.IRBApprovalFile == null)
+            {
+                ModelState.AddModelError(
+                    nameof(grant.IRBApprovalFile),
+                    "IRB Approval File is required when the project uses human subjects.");
+            }
+
+            // Validate file sizes and extensions
+            var fileValidationErrors = ValidateUploadedFiles(grant);
+            foreach (var error in fileValidationErrors)
+            {
+                ModelState.AddModelError(error.Key, error.Value);
+            }
+
             if (!ModelState.IsValid)
             {
                 grant.UserOptions = await GetUserOptionsAsync();
                 return View(grant);
             }
 
-            grant.UserId = _userManager.GetUserId(User);
-            grant.SubmittedAt = DateTime.Now;
+            try
+            {
+                // Process file uploads
+                await ProcessFileUploads(grant);
 
-            _context.Grants.Add(grant);
-            await _context.SaveChangesAsync();
+                grant.UserId = _userManager.GetUserId(User);
+                grant.SubmittedAt = DateTime.Now;
 
-            TempData["SuccessMessage"] = "Grant request submitted successfully!";
+                _context.Grants.Add(grant);
+                await _context.SaveChangesAsync();
 
-            return RedirectToAction("Index", "UserDashboard");
+                TempData["SuccessMessage"] = "Grant request submitted successfully!";
+
+                return RedirectToAction("Index", "UserDashboard");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, $"An error occurred while processing your request: {ex.Message}");
+                grant.UserOptions = await GetUserOptionsAsync();
+                return View(grant);
+            }
+        }
+
+        private Dictionary<string, string> ValidateUploadedFiles(Grant grant)
+        {
+            var errors = new Dictionary<string, string>();
+
+            var files = new[]
+            {
+                (nameof(grant.SupportingDocument1), grant.SupportingDocument1),
+                (nameof(grant.SupportingDocument2), grant.SupportingDocument2),
+                (nameof(grant.SupportingDocument3), grant.SupportingDocument3),
+                (nameof(grant.IRBApprovalFile), grant.IRBApprovalFile)
+            };
+
+            foreach (var (fieldName, file) in files)
+            {
+                if (file != null)
+                {
+                    if (file.Length > MaxFileSize)
+                    {
+                        errors[fieldName] = $"File is too large. Maximum size is 5MB.";
+                    }
+
+                    var extension = Path.GetExtension(file.FileName).ToLower();
+                    if (!AllowedExtensions.Contains(extension))
+                    {
+                        errors[fieldName] = $"File type not allowed. Allowed types: PDF, Word, Excel.";
+                    }
+                }
+            }
+
+            return errors;
+        }
+
+        private async Task ProcessFileUploads(Grant grant)
+        {
+            // Create uploads directory if it doesn't exist
+            var uploadsPath = Path.Combine(_webHostEnvironment.WebRootPath, "uploads");
+            if (!Directory.Exists(uploadsPath))
+            {
+                Directory.CreateDirectory(uploadsPath);
+            }
+
+            // We'll use the GrantId in the path, but since the grant isn't saved yet, we'll use a temporary naming strategy
+            var files = new[]
+            {
+                (field: nameof(grant.SupportingDocument1), file: grant.SupportingDocument1, pathProperty: nameof(grant.SupportingDocument1Path)),
+                (field: nameof(grant.SupportingDocument2), file: grant.SupportingDocument2, pathProperty: nameof(grant.SupportingDocument2Path)),
+                (field: nameof(grant.SupportingDocument3), file: grant.SupportingDocument3, pathProperty: nameof(grant.SupportingDocument3Path)),
+                (field: nameof(grant.IRBApprovalFile), file: grant.IRBApprovalFile, pathProperty: nameof(grant.IRBApprovalFilePath))
+            };
+
+            foreach (var (field, file, pathProperty) in files)
+            {
+                if (file != null)
+                {
+                    // Generate unique filename with timestamp
+                    var fileName = $"{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid().ToString().Substring(0, 8)}{Path.GetExtension(file.FileName)}";
+                    var filePath = Path.Combine(uploadsPath, fileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                    }
+
+                    // Store relative path for database
+                    var relativePath = $"/uploads/{fileName}";
+
+                    // Set the path property on the grant
+                    var property = typeof(Grant).GetProperty(pathProperty);
+                    if (property != null)
+                    {
+                        property.SetValue(grant, relativePath);
+                    }
+                }
+            }
         }
 
         [HttpGet]

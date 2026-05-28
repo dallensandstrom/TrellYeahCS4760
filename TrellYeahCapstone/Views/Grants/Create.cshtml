@@ -6,7 +6,7 @@
 
 <h1>Submit Grant Request</h1>
 
-<form asp-action="Create" method="post">
+<form asp-action="Create" method="post" enctype="multipart/form-data">
     <div class="mb-3">
         <label asp-for="ProjectDirectorUserId" class="form-label"></label>
         <select asp-for="ProjectDirectorUserId"
@@ -72,8 +72,40 @@
     </div>
 
     <div class="form-check mb-3">
-        <input asp-for="UsesHumanSubjects" class="form-check-input" />
+        <input asp-for="UsesHumanSubjects"
+               class="form-check-input"
+               id="usesHumanSubjectsCheck" />
         <label asp-for="UsesHumanSubjects" class="form-check-label"></label>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Supporting Documents (Optional - up to 3 files)</label>
+        <div class="mb-2">
+            <label for="SupportingDocument1" class="form-label">File 1</label>
+            <input type="file" class="form-control" id="SupportingDocument1" name="SupportingDocument1" />
+            <small class="text-muted">PDF, Word, or Excel files up to 5MB</small>
+        </div>
+        <div class="mb-2">
+            <label for="SupportingDocument2" class="form-label">File 2</label>
+            <input type="file" class="form-control" id="SupportingDocument2" name="SupportingDocument2" />
+            <small class="text-muted">PDF, Word, or Excel files up to 5MB</small>
+        </div>
+        <div class="mb-2">
+            <label for="SupportingDocument3" class="form-label">File 3</label>
+            <input type="file" class="form-control" id="SupportingDocument3" name="SupportingDocument3" />
+            <small class="text-muted">PDF, Word, or Excel files up to 5MB</small>
+        </div>
+    </div>
+
+    <div class="mb-3" id="irbApprovalSection" style="display: none;">
+        <label for="IRBApprovalFile" class="form-label">
+            <span class="text-danger">*</span> IRB Approval File (Required for projects using human subjects)
+        </label>
+        <input type="file" 
+               class="form-control" 
+               id="IRBApprovalFile" 
+               name="IRBApprovalFile" />
+        <small class="text-muted">PDF or Word file up to 5MB</small>
     </div>
 
     <button type="submit" class="btn btn-primary">
@@ -91,14 +123,31 @@
     <script>
         const benefitsMultipleDepartmentsCheck = document.getElementById('benefitsMultipleDepartmentsCheck');
         const departmentCountSection = document.getElementById('departmentCountSection');
+        const usesHumanSubjectsCheck = document.getElementById('usesHumanSubjectsCheck');
+        const irbApprovalSection = document.getElementById('irbApprovalSection');
+        const irbApprovalFile = document.getElementById('IRBApprovalFile');
 
         function toggleDepartmentCount() {
             departmentCountSection.style.display =
                 benefitsMultipleDepartmentsCheck.checked ? 'block' : 'none';
         }
 
+        function toggleIRBApprovalField() {
+            if (usesHumanSubjectsCheck.checked) {
+                irbApprovalSection.style.display = 'block';
+                irbApprovalFile.required = true;
+            } else {
+                irbApprovalSection.style.display = 'none';
+                irbApprovalFile.required = false;
+                irbApprovalFile.value = '';
+            }
+        }
+
         benefitsMultipleDepartmentsCheck.addEventListener('change', toggleDepartmentCount);
+        usesHumanSubjectsCheck.addEventListener('change', toggleIRBApprovalField);
+
         toggleDepartmentCount();
+        toggleIRBApprovalField();
 
         const projectDirectorSelect = document.getElementById('projectDirectorSelect');
         const collegeSpan = document.getElementById('projectDirectorCollege');
