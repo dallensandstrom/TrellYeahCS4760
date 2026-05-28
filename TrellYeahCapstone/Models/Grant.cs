@@ -16,7 +16,7 @@ namespace TrellYeahCS4760.Models
         [StringLength(1000)]
         public string Description { get; set; } = string.Empty;
 
-        public DateTime SubmittedAt { get; set; } = DateTime.Now;
+        public DateTime? SubmittedAt { get; set; }
 
         public string? UserId { get; set; }
 
@@ -71,5 +71,16 @@ namespace TrellYeahCS4760.Models
 
         [NotMapped]
         public IFormFile? IRBApprovalFile { get; set; }
+
+        [Display(Name = "Timeline")]
+        [StringLength(1000)]
+        public string? Timeline { get; set; }
+
+        [Required]
+        [StringLength(25)]
+        public string Status { get; set; } = "In Progress";
+
+        [NotMapped]
+        public bool IsSubmitted => Status == "Submitted";
     }
 }

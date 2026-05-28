@@ -44,10 +44,37 @@ namespace TrellYeahCapstone.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Grant grant)
+        public async Task<IActionResult> Create(Grant grant, string submitAction)
         {
-            if (grant.BenefitsMultipleDepartments &&
-                grant.NumberOfDepartmentsBenefited == null)
+            var isSubmitting = submitAction == "Submit";
+
+            if (!isSubmitting)
+            {
+                ModelState.Remove(nameof(grant.Title));
+                ModelState.Remove(nameof(grant.Description));
+                ModelState.Remove(nameof(grant.Justification));
+                ModelState.Remove(nameof(grant.ProjectDirectorUserId));
+                ModelState.Remove(nameof(grant.PrincipalInvestigatorUserId));
+
+                var currentUserId = _userManager.GetUserId(User) ?? string.Empty;
+
+                grant.Title = string.IsNullOrWhiteSpace(grant.Title)
+                    ? "Untitled Grant Application"
+                    : grant.Title;
+
+                grant.Description ??= string.Empty;
+                grant.Justification ??= string.Empty;
+
+                grant.ProjectDirectorUserId = string.IsNullOrWhiteSpace(grant.ProjectDirectorUserId)
+                    ? currentUserId
+                    : grant.ProjectDirectorUserId;
+
+                grant.PrincipalInvestigatorUserId = string.IsNullOrWhiteSpace(grant.PrincipalInvestigatorUserId)
+                    ? currentUserId
+                    : grant.PrincipalInvestigatorUserId;
+            }
+
+            if (isSubmitting && grant.BenefitsMultipleDepartments && grant.NumberOfDepartmentsBenefited == null)
             {
                 ModelState.AddModelError(
                     nameof(grant.NumberOfDepartmentsBenefited),
@@ -55,7 +82,7 @@ namespace TrellYeahCapstone.Controllers
             }
 
             // Validate IRB file requirement when using human subjects
-            if (grant.UsesHumanSubjects && grant.IRBApprovalFile == null)
+            if (isSubmitting && grant.UsesHumanSubjects && grant.IRBApprovalFile == null)
             {
                 ModelState.AddModelError(
                     nameof(grant.IRBApprovalFile),
@@ -81,12 +108,16 @@ namespace TrellYeahCapstone.Controllers
                 await ProcessFileUploads(grant);
 
                 grant.UserId = _userManager.GetUserId(User);
-                grant.SubmittedAt = DateTime.Now;
+
+                grant.Status = isSubmitting ? "Submitted" : "In Progress";
+                grant.SubmittedAt = isSubmitting ? DateTime.Now : null;
 
                 _context.Grants.Add(grant);
                 await _context.SaveChangesAsync();
 
-                TempData["SuccessMessage"] = "Grant request submitted successfully!";
+                TempData["SuccessMessage"] = isSubmitting
+                    ? "Grant request submitted successfully!"
+                    : "Grant application saved. You can come back and finish it later.";
 
                 return RedirectToAction("Index", "UserDashboard");
             }
@@ -216,6 +247,139 @@ namespace TrellYeahCapstone.Controllers
                     Text = u.Email ?? "Unknown user"
                 })
                 .ToListAsync();
+        }
+        public async Task<IActionResult> Edit(int id)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+
+            var grant = await _context.Grants
+                .FirstOrDefaultAsync(g => g.GrantId == id && g.UserId == currentUserId);
+
+            if (grant == null)
+            {
+                return NotFound();
+            }
+
+            if (grant.Status == "Submitted")
+            {
+                TempData["ErrorMessage"] = "Submitted grant applications are locked and cannot be edited.";
+                return RedirectToAction("Details", new { id = grant.GrantId });
+            }
+
+            grant.UserOptions = await GetUserOptionsAsync();
+
+            return View(grant);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, Grant grant, string submitAction)
+        {
+            if (id != grant.GrantId)
+            {
+                return NotFound();
+            }
+
+            var currentUserId = _userManager.GetUserId(User);
+
+            var existingGrant = await _context.Grants
+                .FirstOrDefaultAsync(g => g.GrantId == id && g.UserId == currentUserId);
+
+            if (existingGrant == null)
+            {
+                return NotFound();
+            }
+
+            if (existingGrant.Status == "Submitted")
+            {
+                TempData["ErrorMessage"] = "Submitted grant applications are locked and cannot be edited.";
+                return RedirectToAction("Details", new { id = existingGrant.GrantId });
+            }
+
+            var isSubmitting = submitAction == "Submit";
+
+            if (!isSubmitting)
+            {
+                ModelState.Remove(nameof(grant.Title));
+                ModelState.Remove(nameof(grant.Description));
+                ModelState.Remove(nameof(grant.Justification));
+                ModelState.Remove(nameof(grant.ProjectDirectorUserId));
+                ModelState.Remove(nameof(grant.PrincipalInvestigatorUserId));
+
+                grant.Title = string.IsNullOrWhiteSpace(grant.Title)
+                    ? "Untitled Grant Application"
+                    : grant.Title;
+
+                grant.Description ??= string.Empty;
+                grant.Justification ??= string.Empty;
+            }
+
+            if (isSubmitting &&
+                grant.BenefitsMultipleDepartments &&
+                grant.NumberOfDepartmentsBenefited == null)
+            {
+                ModelState.AddModelError(
+                    nameof(grant.NumberOfDepartmentsBenefited),
+                    "Enter how many departments will benefit.");
+            }
+
+            if (isSubmitting && grant.UsesHumanSubjects && grant.IRBApprovalFile == null)
+            {
+                ModelState.AddModelError(
+                    nameof(grant.IRBApprovalFile),
+                    "IRB Approval File is required when the project uses human subjects.");
+            }
+
+            var fileValidationErrors = ValidateUploadedFiles(grant);
+            foreach (var error in fileValidationErrors)
+            {
+                ModelState.AddModelError(error.Key, error.Value);
+            }
+
+            if (!ModelState.IsValid)
+            {
+                grant.UserOptions = await GetUserOptionsAsync();
+                return View(grant);
+            }
+
+            await ProcessFileUploads(grant);
+
+            existingGrant.Title = grant.Title;
+            existingGrant.Description = grant.Description;
+            existingGrant.Justification = grant.Justification;
+            existingGrant.Timeline = grant.Timeline;
+            existingGrant.ProjectDirectorUserId = grant.ProjectDirectorUserId;
+            existingGrant.PrincipalInvestigatorUserId = grant.PrincipalInvestigatorUserId;
+            existingGrant.WeberStateStudentsBenefited = grant.WeberStateStudentsBenefited;
+            existingGrant.BenefitsMultipleDepartments = grant.BenefitsMultipleDepartments;
+            existingGrant.NumberOfDepartmentsBenefited = grant.NumberOfDepartmentsBenefited;
+            existingGrant.UsesHumanSubjects = grant.UsesHumanSubjects;
+
+            existingGrant.Status = isSubmitting ? "Submitted" : "In Progress";
+            existingGrant.SubmittedAt = isSubmitting ? DateTime.Now : null;
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = isSubmitting
+                ? "Grant request submitted successfully!"
+                : "Grant application saved. You can come back and finish it later.";
+
+            return RedirectToAction("Index", "UserDashboard");
+        }
+
+        public async Task<IActionResult> Details(int id)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+
+            var grant = await _context.Grants
+                .FirstOrDefaultAsync(g => g.GrantId == id && g.UserId == currentUserId);
+
+            if (grant == null)
+            {
+                return NotFound();
+            }
+
+            return View(grant);
         }
     }
 }

@@ -1,49 +1,186 @@
 @model TrellYeahCS4760.Models.Grant
 
 @{
-    ViewData["Title"] = "Edit";
+    ViewData["Title"] = "Submit Grant Request";
 }
 
-<h1>Edit</h1>
+<h1>Submit Grant Request</h1>
 
-<h4>Grant</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="GrantId" />
-            <div class="form-group">
-                <label asp-for="Title" class="control-label"></label>
-                <input asp-for="Title" class="form-control" />
-                <span asp-validation-for="Title" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Description" class="control-label"></label>
-                <input asp-for="Description" class="form-control" />
-                <span asp-validation-for="Description" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="SubmittedAt" class="control-label"></label>
-                <input asp-for="SubmittedAt" class="form-control" />
-                <span asp-validation-for="SubmittedAt" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="UserId" class="control-label"></label>
-                <input asp-for="UserId" class="form-control" />
-                <span asp-validation-for="UserId" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary" />
-            </div>
-        </form>
+<form asp-action="Edit" asp-route-id="@Model.GrantId" method="post" enctype="multipart/form-data">
+    <input type="hidden" asp-for="GrantId" />
+    <div class="mb-3">
+        <label asp-for="ProjectDirectorUserId" class="form-label"></label>
+        <select asp-for="ProjectDirectorUserId"
+                asp-items="Model.UserOptions"
+                class="form-select"
+                id="projectDirectorSelect">
+        </select>
+        <span asp-validation-for="ProjectDirectorUserId" class="text-danger"></span>
     </div>
-</div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
+    <div class="mb-3">
+        <strong>College:</strong>
+        <span id="projectDirectorCollege">Loading...</span>
+        <br />
+        <strong>Department:</strong>
+        <span id="projectDirectorDepartment">Loading...</span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="PrincipalInvestigatorUserId" class="form-label"></label>
+        <select asp-for="PrincipalInvestigatorUserId"
+                asp-items="Model.UserOptions"
+                class="form-select">
+        </select>
+        <span asp-validation-for="PrincipalInvestigatorUserId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Title" class="form-label"></label>
+        <input asp-for="Title" class="form-control" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Justification" class="form-label"></label>
+        <textarea asp-for="Justification" class="form-control" rows="4"></textarea>
+        <span asp-validation-for="Justification" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Timeline" class="form-label"></label>
+        <textarea asp-for="Timeline" class="form-control" rows="4"></textarea>
+        <span asp-validation-for="Timeline" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="WeberStateStudentsBenefited" class="form-label"></label>
+        <input asp-for="WeberStateStudentsBenefited" class="form-control" min="0" />
+        <span asp-validation-for="WeberStateStudentsBenefited" class="text-danger"></span>
+    </div>
+
+    <div class="form-check mb-3">
+        <input asp-for="BenefitsMultipleDepartments"
+               class="form-check-input"
+               id="benefitsMultipleDepartmentsCheck" />
+        <label asp-for="BenefitsMultipleDepartments" class="form-check-label"></label>
+    </div>
+
+    <div class="mb-3" id="departmentCountSection">
+        <label asp-for="NumberOfDepartmentsBenefited" class="form-label"></label>
+        <input asp-for="NumberOfDepartmentsBenefited" class="form-control" min="2" />
+        <span asp-validation-for="NumberOfDepartmentsBenefited" class="text-danger"></span>
+    </div>
+
+    <div class="form-check mb-3">
+        <input asp-for="UsesHumanSubjects"
+               class="form-check-input"
+               id="usesHumanSubjectsCheck" />
+        <label asp-for="UsesHumanSubjects" class="form-check-label"></label>
+    </div>
+    
+    <div class="mb-3" id="irbApprovalSection" style="display: none;">
+        <label for="IRBApprovalFile" class="form-label">
+            <span class="text-danger">*</span> IRB Approval File (Required for projects using human subjects)
+        </label>
+        <input type="file"
+               class="form-control"
+               id="IRBApprovalFile"
+               name="IRBApprovalFile" />
+        <small class="text-muted">PDF or Word file up to 5MB</small>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Supporting Documents (Optional - up to 3 files)</label>
+        <div class="mb-2">
+            <label for="SupportingDocument1" class="form-label">File 1</label>
+            <input type="file" class="form-control" id="SupportingDocument1" name="SupportingDocument1" />
+            <small class="text-muted">PDF, Word, or Excel files up to 5MB</small>
+        </div>
+        <div class="mb-2">
+            <label for="SupportingDocument2" class="form-label">File 2</label>
+            <input type="file" class="form-control" id="SupportingDocument2" name="SupportingDocument2" />
+            <small class="text-muted">PDF, Word, or Excel files up to 5MB</small>
+        </div>
+        <div class="mb-2">
+            <label for="SupportingDocument3" class="form-label">File 3</label>
+            <input type="file" class="form-control" id="SupportingDocument3" name="SupportingDocument3" />
+            <small class="text-muted">PDF, Word, or Excel files up to 5MB</small>
+        </div>
+    </div>
+
+    <button type="submit" name="submitAction" value="Submit" class="btn btn-primary">
+        Submit Grant
+    </button>
+
+    <button type="submit" name="submitAction" value="Save" class="btn btn-outline-primary" formnovalidate>
+        Save
+    </button>
+
+    <a asp-controller="UserDashboard" asp-action="Index" class="btn btn-secondary">
+        Cancel
+    </a>
+</form>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        const benefitsMultipleDepartmentsCheck = document.getElementById('benefitsMultipleDepartmentsCheck');
+        const departmentCountSection = document.getElementById('departmentCountSection');
+        const usesHumanSubjectsCheck = document.getElementById('usesHumanSubjectsCheck');
+        const irbApprovalSection = document.getElementById('irbApprovalSection');
+        const irbApprovalFile = document.getElementById('IRBApprovalFile');
+
+        function toggleDepartmentCount() {
+            departmentCountSection.style.display =
+                benefitsMultipleDepartmentsCheck.checked ? 'block' : 'none';
+        }
+
+        function toggleIRBApprovalField() {
+            if (usesHumanSubjectsCheck.checked) {
+                irbApprovalSection.style.display = 'block';
+                irbApprovalFile.required = true;
+            } else {
+                irbApprovalSection.style.display = 'none';
+                irbApprovalFile.required = false;
+                irbApprovalFile.value = '';
+            }
+        }
+
+        benefitsMultipleDepartmentsCheck.addEventListener('change', toggleDepartmentCount);
+        usesHumanSubjectsCheck.addEventListener('change', toggleIRBApprovalField);
+
+        toggleDepartmentCount();
+        toggleIRBApprovalField();
+
+        const projectDirectorSelect = document.getElementById('projectDirectorSelect');
+        const collegeSpan = document.getElementById('projectDirectorCollege');
+        const departmentSpan = document.getElementById('projectDirectorDepartment');
+
+        async function loadProjectDirectorInfo() {
+            const userId = projectDirectorSelect.value;
+
+            if (!userId) {
+                collegeSpan.textContent = 'Not assigned';
+                departmentSpan.textContent = 'Not assigned';
+                return;
+            }
+
+            const response = await fetch(`/Grants/GetUserCollegeAndDepartment?userId=${userId}`);
+            const data = await response.json();
+
+            collegeSpan.textContent = data.college;
+            departmentSpan.textContent = data.department;
+        }
+
+        projectDirectorSelect.addEventListener('change', loadProjectDirectorInfo);
+        loadProjectDirectorInfo();
+    </script>
 }

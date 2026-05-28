@@ -1,45 +1,30 @@
 @model TrellYeahCS4760.Models.Grant
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Grant Details";
 }
 
-<h1>Details</h1>
+<h1>Grant Details</h1>
 
-<div>
-    <h4>Grant</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Title)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Title)
-        </dd>
-    </dl>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Description)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Description)
-        </dd>
-    </dl>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.SubmittedAt)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.SubmittedAt)
-        </dd>
-    </dl>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.UserId)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.UserId)
-        </dd>
-    </dl>
+<div class="card">
+    <div class="card-body">
+        <h4>@Model.Title</h4>
+
+        <p><strong>Status:</strong> @Model.Status</p>
+        <p><strong>Description:</strong> @Model.Description</p>
+        <p><strong>Justification:</strong> @Model.Justification</p>
+        <p><strong>Timeline:</strong> @Model.Timeline</p>
+        <p><strong>Submitted:</strong> @(Model.SubmittedAt?.ToString("MMM d, yyyy h:mm tt") ?? "Not submitted")</p>
+    </div>
 </div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.GrantId">Edit</a> |
-    <a asp-action="Index">Back to List</a>
-</div>
+
+<a asp-controller="UserDashboard" asp-action="Index" class="btn btn-secondary mt-3">
+    Back to Dashboard
+</a>
+
+@if (Model.Status != "Submitted")
+{
+    <a asp-controller="Grants" asp-action="Edit" asp-route-id="@Model.GrantId" class="btn btn-primary mt-3">
+        Continue Editing
+    </a>
+}
