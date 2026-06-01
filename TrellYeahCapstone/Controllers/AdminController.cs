@@ -84,6 +84,7 @@ namespace TrellYeahCapstone.Controllers
             user.IsArccCommitteeMember = false;
             user.IsArccCommitteeChair = false;
             await _userManager.UpdateAsync(user);
+            await _userManager.RemoveFromRoleAsync(user, "ARCCchair");
 
             TempData["StatusMessage"] = $"{GetUserDisplayName(user)} was removed from the ARCC committee.";
             return RedirectToAction(nameof(Index));
@@ -109,11 +110,13 @@ namespace TrellYeahCapstone.Controllers
             {
                 chair.IsArccCommitteeChair = false;
                 await _userManager.UpdateAsync(chair);
+                await _userManager.RemoveFromRoleAsync(chair, "ARCCchair");
             }
 
             selectedUser.IsArccCommitteeMember = true;
             selectedUser.IsArccCommitteeChair = true;
             await _userManager.UpdateAsync(selectedUser);
+            await _userManager.AddToRoleAsync(selectedUser, "ARCCchair");
 
             TempData["StatusMessage"] = $"{GetUserDisplayName(selectedUser)} is now the ARCC committee chair.";
             return RedirectToAction(nameof(Index));

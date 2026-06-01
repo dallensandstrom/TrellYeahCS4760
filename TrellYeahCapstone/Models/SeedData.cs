@@ -23,7 +23,7 @@ namespace TrellYeahCapstone.Models
 
         private static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
         {
-            string[] roles = { "Admin" };
+            string[] roles = { "Admin", "ARCCchair" };
 
             foreach (var role in roles)
             {

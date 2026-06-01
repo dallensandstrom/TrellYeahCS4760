@@ -20,13 +20,17 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
                         @if (User.IsInRole("Admin"))
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Admin" asp-action="Index">Admin</a>
+                            </li>
+                        }
+                        @if (User.IsInRole("Admin") || User.IsInRole("ARCCchair"))
+                        {
+                            <li class="nav-item">
+                                <!--Still Needs To Be Connected to a Page-->
+                                <a class="nav-link text-dark" asp-area="" asp-controller="" asp-action="">Rubric</a>
                             </li>
                         }
                         @if (User.Identity != null &&
