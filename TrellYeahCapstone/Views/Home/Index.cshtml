@@ -1,8 +1,35 @@
-﻿@{
+﻿@using Microsoft.AspNetCore.Identity
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+@{
     ViewData["Title"] = "Home Page";
 }
 
 <div class="text-center">
-    <h3 class="display-4">Grant Application</h3>
-    <p>Apply for your grant here.</p>
+    <h1 class="display-4">Grant Application</h1>
+    @if (SignInManager.IsSignedIn(User))
+    {
+        if (User.IsInRole("Admin"))
+        {
+            <p>You are logged in as an admin</p>
+        }
+        else if (User.IsInRole("ARCCchair"))
+        {
+            <p>You are logged in as the ARCC Chair</p>
+        }
+        else
+        {
+            <p>
+                You are logged in, you may now apply for a grant.
+            </p>
+        }
+    }
+    else
+    {
+        <p>
+            To apply for a grant please<br />
+            <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Login">Login</a> or <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Register">Register</a>
+        </p>
+    }
 </div>
