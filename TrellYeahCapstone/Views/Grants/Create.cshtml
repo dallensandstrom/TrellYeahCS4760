@@ -77,22 +77,25 @@
         <span asp-validation-for="NumberOfDepartmentsBenefited" class="text-danger"></span>
     </div>
 
-    <div class="form-check mb-3">
-        <input asp-for="UsesHumanSubjects"
-               class="form-check-input"
-               id="usesHumanSubjectsCheck" />
-        <label asp-for="UsesHumanSubjects" class="form-check-label"></label>
-    </div>
-
-    <div class="mb-3" id="irbApprovalSection" style="display: none;">
-        <label for="IRBApprovalFile" class="form-label">
-            <span class="text-danger">*</span> IRB Approval File (Required for projects using human subjects)
-        </label>
-        <input type="file"
-               class="form-control"
-               id="IRBApprovalFile"
-               name="IRBApprovalFile" />
-        <small class="text-muted">PDF or Word file up to 5MB</small>
+    <div class="row align-items-start mb-3">
+        <div class="col-auto pt-1">
+            <div class="form-check">
+                <input asp-for="UsesHumanSubjects"
+                       class="form-check-input"
+                       id="usesHumanSubjectsCheck" />
+                <label asp-for="UsesHumanSubjects" class="form-check-label"></label>
+            </div>
+        </div>
+        <div class="col" id="irbApprovalSection" style="display: none;">
+            <label for="IRBApprovalFile" class="form-label mb-1">
+                <span class="text-danger">*</span> IRB Approval File (Required)
+            </label>
+            <input type="file"
+                   class="form-control"
+                   id="IRBApprovalFile"
+                   name="IRBApprovalFile" />
+            <small class="text-muted">PDF or Word file up to 5MB</small>
+        </div>
     </div>
 
     <div class="mb-3">
@@ -121,6 +124,12 @@
     <button type="submit" name="submitAction" value="Save" class="btn btn-outline-primary" formnovalidate>
         Save
     </button>
+
+    <span class="btn btn-outline-success disabled"
+          title="Save your application first to access the budget worksheet"
+          data-bs-toggle="tooltip">
+        Budget Worksheet (Save first)
+    </span>
 
     <a asp-controller="UserDashboard" asp-action="Index" class="btn btn-secondary">
         Cancel
@@ -181,5 +190,10 @@
 
         projectDirectorSelect.addEventListener('change', loadProjectDirectorInfo);
         loadProjectDirectorInfo();
+
+        // Enable tooltips
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+            new bootstrap.Tooltip(el);
+        });
     </script>
 }

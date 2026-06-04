@@ -253,6 +253,7 @@ namespace TrellYeahCapstone.Controllers
             var currentUserId = _userManager.GetUserId(User);
 
             var grant = await _context.Grants
+                .Include(g => g.BudgetItems)
                 .FirstOrDefaultAsync(g => g.GrantId == id && g.UserId == currentUserId);
 
             if (grant == null)
@@ -380,6 +381,53 @@ namespace TrellYeahCapstone.Controllers
             }
 
             return View(grant);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> BudgetWorksheet(int id)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            var grant = await _context.Grants
+                .Include(g => g.BudgetItems)
+                .FirstOrDefaultAsync(g => g.GrantId == id && g.UserId == currentUserId);
+
+            if (grant == null) return NotFound();
+
+            var vm = new BudgetWorksheetViewModel
+            {
+                GrantId = grant.GrantId,
+                GrantTitle = grant.Title,
+                BudgetItems = grant.BudgetItems.ToList()
+            };
+
+            return View(vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BudgetWorksheet(int id, BudgetWorksheetViewModel vm)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            var grant = await _context.Grants
+                .FirstOrDefaultAsync(g => g.GrantId == id && g.UserId == currentUserId);
+
+            if (grant == null) return NotFound();
+
+            // Replace all budget items for this grant
+            var oldItems = _context.BudgetItems.Where(b => b.GrantId == id);
+            _context.BudgetItems.RemoveRange(oldItems);
+
+            foreach (var item in vm.BudgetItems)
+            {
+                item.GrantId = id;
+                item.BudgetItemId = 0;
+                _context.BudgetItems.Add(item);
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Budget worksheet saved!";
+            return RedirectToAction("BudgetWorksheet", new { id });
         }
     }
 }

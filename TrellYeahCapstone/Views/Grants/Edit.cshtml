@@ -78,22 +78,25 @@
         <span asp-validation-for="NumberOfDepartmentsBenefited" class="text-danger"></span>
     </div>
 
-    <div class="form-check mb-3">
-        <input asp-for="UsesHumanSubjects"
-               class="form-check-input"
-               id="usesHumanSubjectsCheck" />
-        <label asp-for="UsesHumanSubjects" class="form-check-label"></label>
-    </div>
-    
-    <div class="mb-3" id="irbApprovalSection" style="display: none;">
-        <label for="IRBApprovalFile" class="form-label">
-            <span class="text-danger">*</span> IRB Approval File (Required for projects using human subjects)
-        </label>
-        <input type="file"
-               class="form-control"
-               id="IRBApprovalFile"
-               name="IRBApprovalFile" />
-        <small class="text-muted">PDF or Word file up to 5MB</small>
+    <div class="row align-items-start mb-3">
+        <div class="col-auto pt-1">
+            <div class="form-check">
+                <input asp-for="UsesHumanSubjects"
+                       class="form-check-input"
+                       id="usesHumanSubjectsCheck" />
+                <label asp-for="UsesHumanSubjects" class="form-check-label"></label>
+            </div>
+        </div>
+        <div class="col" id="irbApprovalSection" style="display: none;">
+            <label for="IRBApprovalFile" class="form-label mb-1">
+                <span class="text-danger">*</span> IRB Approval File (Required)
+            </label>
+            <input type="file"
+                   class="form-control"
+                   id="IRBApprovalFile"
+                   name="IRBApprovalFile" />
+            <small class="text-muted">PDF or Word file up to 5MB</small>
+        </div>
     </div>
 
     <div class="mb-3">
@@ -115,6 +118,21 @@
         </div>
     </div>
 
+    @if (Model.BudgetItems.Any())
+    {
+        <div class="card mb-3">
+            <div class="card-header"><strong>Budget Funding Totals</strong></div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col">ARCC<br /><strong>$@Model.BudgetItems.Sum(b => b.ARCCAmount).ToString("0.00")</strong></div>
+                    <div class="col">College<br /><strong>$@Model.BudgetItems.Sum(b => b.CollegeAmount).ToString("0.00")</strong></div>
+                    <div class="col">Department<br /><strong>$@Model.BudgetItems.Sum(b => b.DepartmentAmount).ToString("0.00")</strong></div>
+                    <div class="col">Other<br /><strong>$@Model.BudgetItems.Sum(b => b.OtherAmount).ToString("0.00")</strong></div>
+                </div>
+            </div>
+        </div>
+    }
+
     <button type="submit" name="submitAction" value="Submit" class="btn btn-primary">
         Submit Grant
     </button>
@@ -122,6 +140,10 @@
     <button type="submit" name="submitAction" value="Save" class="btn btn-outline-primary" formnovalidate>
         Save
     </button>
+
+    <a asp-action="BudgetWorksheet" asp-controller="Grants" asp-route-id="@Model.GrantId" class="btn btn-outline-success">
+        Budget Worksheet
+    </a>
 
     <a asp-controller="UserDashboard" asp-action="Index" class="btn btn-secondary">
         Cancel
