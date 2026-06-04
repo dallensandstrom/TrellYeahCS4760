@@ -1,0 +1,131 @@
+@model TrellYeahCapstone.Models.RubricIndexViewModel
+
+@{
+    ViewData["Title"] = "Rubric";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <h1 class="h2 mb-0">Rubric</h1>
+</div>
+
+@if (TempData["StatusMessage"] is string statusMessage)
+{
+    <div class="alert alert-info" role="alert">@statusMessage</div>
+}
+
+<section class="mb-4">
+    <h2 class="h4">Add criterion</h2>
+    <form asp-action="AddCriterion" method="post" class="row g-3">
+        <div class="col-md-3">
+            <label for="newCriterionName" class="form-label">Name</label>
+            <input id="newCriterionName" name="name" class="form-control" maxlength="100" required />
+        </div>
+        <div class="col-md-5">
+            <label for="newCriterionDescription" class="form-label">Description</label>
+            <textarea id="newCriterionDescription" name="description" class="form-control" rows="2" maxlength="1000" required></textarea>
+        </div>
+        <div class="col-md-2">
+            <label for="newCriterionMaximumScore" class="form-label">Maximum score</label>
+            <input id="newCriterionMaximumScore" name="maximumScore" type="number" min="1" max="1000" class="form-control" required />
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">Add criterion</button>
+        </div>
+    </form>
+</section>
+
+<section>
+    <h2 class="h4">Criteria</h2>
+
+    @if (!Model.Criteria.Any())
+    {
+        <p>No rubric criteria have been added yet.</p>
+    }
+    else
+    {
+        @foreach (var criterion in Model.Criteria)
+        {
+            <div class="border rounded p-3 mb-4">
+                <form asp-action="EditCriterion" method="post" class="row g-3 align-items-end mb-3">
+                    <input type="hidden" name="id" value="@criterion.RubricCriterionId" />
+                    <div class="col-md-3">
+                        <label class="form-label" for="criterionName-@criterion.RubricCriterionId">Name</label>
+                        <input id="criterionName-@criterion.RubricCriterionId" name="name" value="@criterion.Name" class="form-control" maxlength="100" required />
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label" for="criterionDescription-@criterion.RubricCriterionId">Description</label>
+                        <textarea id="criterionDescription-@criterion.RubricCriterionId" name="description" class="form-control" rows="2" maxlength="1000" required>@criterion.Description</textarea>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label" for="criterionMax-@criterion.RubricCriterionId">Maximum score</label>
+                        <input id="criterionMax-@criterion.RubricCriterionId" name="maximumScore" value="@criterion.MaximumScore" type="number" min="1" max="1000" class="form-control" required />
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+
+                <form asp-action="DeleteCriterion" method="post" class="mb-3">
+                    <input type="hidden" name="id" value="@criterion.RubricCriterionId" />
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Remove criterion</button>
+                </form>
+
+                <h3 class="h5">Rating suggestions</h3>
+                @if (criterion.RatingSuggestions.Any())
+                {
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th style="width: 130px;">Score</th>
+                                <th>Description</th>
+                                <th style="width: 190px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var suggestion in criterion.RatingSuggestions)
+                            {
+                                <tr>
+                                    <td>
+                                        <form id="editSuggestion-@suggestion.RubricRatingSuggestionId" asp-action="EditRatingSuggestion" method="post">
+                                            <input type="hidden" name="id" value="@suggestion.RubricRatingSuggestionId" />
+                                            <input name="score" value="@suggestion.Score" type="number" min="0" max="@criterion.MaximumScore" class="form-control form-control-sm" required />
+                                        </form>
+                                    </td>
+                                    <td>
+                                        <input form="editSuggestion-@suggestion.RubricRatingSuggestionId" name="description" value="@suggestion.Description" class="form-control form-control-sm" maxlength="500" required />
+                                    </td>
+                                    <td class="text-end">
+                                        <button form="editSuggestion-@suggestion.RubricRatingSuggestionId" type="submit" class="btn btn-sm btn-outline-primary">Save</button>
+                                        <form asp-action="DeleteRatingSuggestion" method="post" class="d-inline">
+                                            <input type="hidden" name="id" value="@suggestion.RubricRatingSuggestionId" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p>No rating suggestions have been added for this criterion.</p>
+                }
+
+                <form asp-action="AddRatingSuggestion" method="post" class="row g-2 align-items-end">
+                    <input type="hidden" name="criterionId" value="@criterion.RubricCriterionId" />
+                    <div class="col-md-2">
+                        <label class="form-label" for="newSuggestionScore-@criterion.RubricCriterionId">Score</label>
+                        <input id="newSuggestionScore-@criterion.RubricCriterionId" name="score" type="number" min="0" max="@criterion.MaximumScore" class="form-control" required />
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label" for="newSuggestionDescription-@criterion.RubricCriterionId">Description</label>
+                        <input id="newSuggestionDescription-@criterion.RubricCriterionId" name="description" class="form-control" maxlength="500" required />
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-outline-primary w-100">Add suggestion</button>
+                    </div>
+                </form>
+            </div>
+        }
+    }
+</section>

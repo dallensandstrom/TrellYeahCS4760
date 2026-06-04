@@ -19,6 +19,8 @@ namespace TrellYeahCapstone.Models
 
             await SeedCollegesAsync(db, seedUsers);
             await SeedDepartmentsAsync(db, seedUsers);
+            await SeedArccChairAsync(userManager, seedUsers);
+            await SeedRubricAsync(db);
         }
 
         private static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
@@ -148,6 +150,85 @@ namespace TrellYeahCapstone.Models
                 {
                     department.CollegeId = departmentSeed.College.Id;
                     department.ChairUserId = departmentSeed.Chair.Id;
+                }
+            }
+
+            await db.SaveChangesAsync();
+        }
+
+        private static async Task SeedArccChairAsync(UserManager<ApplicationUser> userManager, List<ApplicationUser> seedUsers)
+        {
+            var arccChair = seedUsers[1];
+            var currentChairs = await userManager.Users
+                .Where(user => user.IsArccCommitteeChair)
+                .ToListAsync();
+
+            foreach (var chair in currentChairs.Where(user => user.Id != arccChair.Id))
+            {
+                chair.IsArccCommitteeChair = false;
+                await userManager.UpdateAsync(chair);
+                await userManager.RemoveFromRoleAsync(chair, "ARCCchair");
+            }
+
+            arccChair.IsArccCommitteeMember = true;
+            arccChair.IsArccCommitteeChair = true;
+            await userManager.UpdateAsync(arccChair);
+
+            if (!await userManager.IsInRoleAsync(arccChair, "ARCCchair"))
+            {
+                await userManager.AddToRoleAsync(arccChair, "ARCCchair");
+            }
+        }
+
+        private static async Task SeedRubricAsync(ApplicationDbContext db)
+        {
+            var criterion = await db.RubricCriteria
+                .Include(c => c.RatingSuggestions)
+                .FirstOrDefaultAsync(c => c.Name == "Educational Impact");
+
+            if (criterion == null)
+            {
+                criterion = new RubricCriterion
+                {
+                    Name = "Educational Impact",
+                    Description = "Evaluate how the proposed project enhances the educational experience at Weber State University.",
+                    MaximumScore = 30
+                };
+
+                db.RubricCriteria.Add(criterion);
+                await db.SaveChangesAsync();
+            }
+            else
+            {
+                criterion.Description = "Evaluate how the proposed project enhances the educational experience at Weber State University.";
+                criterion.MaximumScore = 30;
+            }
+
+            var suggestionSeedData = new[]
+            {
+                new { Score = 30, Description = "Strongly enhances student learning; impacts many students across multiple departments/programs." },
+                new { Score = 20, Description = "Meaningfully improves student learning; impacts a moderate number of students or one major program." },
+                new { Score = 10, Description = "Provides limited educational benefit; impacts a small group of students." },
+                new { Score = 0, Description = "Little or no clear educational impact." }
+            };
+
+            foreach (var suggestionSeed in suggestionSeedData)
+            {
+                var suggestion = criterion.RatingSuggestions
+                    .FirstOrDefault(s => s.Score == suggestionSeed.Score);
+
+                if (suggestion == null)
+                {
+                    db.RubricRatingSuggestions.Add(new RubricRatingSuggestion
+                    {
+                        RubricCriterionId = criterion.RubricCriterionId,
+                        Score = suggestionSeed.Score,
+                        Description = suggestionSeed.Description
+                    });
+                }
+                else
+                {
+                    suggestion.Description = suggestionSeed.Description;
                 }
             }
 

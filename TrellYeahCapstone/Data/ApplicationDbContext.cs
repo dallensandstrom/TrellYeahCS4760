@@ -11,5 +11,7 @@ namespace TrellYeahCapstone.Data
 
         public DbSet<Department> Departments { get; set; }
         public DbSet<Grant> Grants { get; set; }
+        public DbSet<RubricCriterion> RubricCriteria { get; set; }
+        public DbSet<RubricRatingSuggestion> RubricRatingSuggestions { get; set; }
     }
 }
