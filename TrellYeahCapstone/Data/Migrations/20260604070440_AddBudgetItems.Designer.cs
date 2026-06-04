@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TrellYeahCapstone.Data;
 
@@ -11,9 +12,11 @@ using TrellYeahCapstone.Data;
 namespace TrellYeahCapstone.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260604070440_AddBudgetItems")]
+    partial class AddBudgetItems
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -418,58 +421,6 @@ namespace TrellYeahCapstone.Data.Migrations
                     b.ToTable("Departments");
                 });
 
-            modelBuilder.Entity("TrellYeahCapstone.Models.RubricCriterion", b =>
-                {
-                    b.Property<int>("RubricCriterionId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RubricCriterionId"));
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<int>("MaximumScore")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("RubricCriterionId");
-
-                    b.ToTable("RubricCriteria");
-                });
-
-            modelBuilder.Entity("TrellYeahCapstone.Models.RubricRatingSuggestion", b =>
-                {
-                    b.Property<int>("RubricRatingSuggestionId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RubricRatingSuggestionId"));
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("RubricCriterionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Score")
-                        .HasColumnType("int");
-
-                    b.HasKey("RubricRatingSuggestionId");
-
-                    b.HasIndex("RubricCriterionId");
-
-                    b.ToTable("RubricRatingSuggestions");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -521,17 +472,6 @@ namespace TrellYeahCapstone.Data.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("TrellYeahCapstone.Models.Department", b =>
-                {
-                    b.HasOne("TrellYeahCapstone.Models.College", "College")
-                        .WithMany("Departments")
-                        .HasForeignKey("CollegeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("College");
-                });
-
             modelBuilder.Entity("TrellYeahCS4760.Models.BudgetItem", b =>
                 {
                     b.HasOne("TrellYeahCS4760.Models.Grant", "Grant")
@@ -543,20 +483,15 @@ namespace TrellYeahCapstone.Data.Migrations
                     b.Navigation("Grant");
                 });
 
-            modelBuilder.Entity("TrellYeahCapstone.Models.RubricRatingSuggestion", b =>
+            modelBuilder.Entity("TrellYeahCapstone.Models.Department", b =>
                 {
-                    b.HasOne("TrellYeahCapstone.Models.RubricCriterion", "RubricCriterion")
-                        .WithMany("RatingSuggestions")
-                        .HasForeignKey("RubricCriterionId")
+                    b.HasOne("TrellYeahCapstone.Models.College", "College")
+                        .WithMany("Departments")
+                        .HasForeignKey("CollegeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("RubricCriterion");
-                });
-
-            modelBuilder.Entity("TrellYeahCapstone.Models.College", b =>
-                {
-                    b.Navigation("Departments");
+                    b.Navigation("College");
                 });
 
             modelBuilder.Entity("TrellYeahCS4760.Models.Grant", b =>
@@ -564,9 +499,9 @@ namespace TrellYeahCapstone.Data.Migrations
                     b.Navigation("BudgetItems");
                 });
 
-            modelBuilder.Entity("TrellYeahCapstone.Models.RubricCriterion", b =>
+            modelBuilder.Entity("TrellYeahCapstone.Models.College", b =>
                 {
-                    b.Navigation("RatingSuggestions");
+                    b.Navigation("Departments");
                 });
 #pragma warning restore 612, 618
         }

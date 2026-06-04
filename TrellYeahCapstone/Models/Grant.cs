@@ -82,5 +82,7 @@ namespace TrellYeahCS4760.Models
 
         [NotMapped]
         public bool IsSubmitted => Status == "Submitted";
+
+        public List<BudgetItem> BudgetItems { get; set; } = new();
     }
 }

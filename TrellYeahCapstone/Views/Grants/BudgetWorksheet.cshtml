@@ -1,0 +1,176 @@
+@model TrellYeahCapstone.Models.BudgetWorksheetViewModel
+
+@{
+    ViewData["Title"] = "Budget Worksheet";
+}
+
+<h1>Budget Worksheet</h1>
+<h5 class="text-muted mb-4">Grant: @Model.GrantTitle</h5>
+
+<form asp-action="BudgetWorksheet" asp-route-id="@Model.GrantId" method="post">
+
+    <div id="budgetItemsContainer">
+        @for (int i = 0; i < Model.BudgetItems.Count; i++)
+        {
+            <div class="border rounded p-3 mb-3 budget-row">
+                <input type="hidden" name="BudgetItems[@i].BudgetItemId" value="@Model.BudgetItems[i].BudgetItemId" />
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label">Item Name</label>
+                        <input type="text" name="BudgetItems[@i].ItemName" class="form-control" value="@Model.BudgetItems[i].ItemName" required />
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">Qty</label>
+                        <input type="number" name="BudgetItems[@i].Quantity" class="form-control" min="1" value="@Model.BudgetItems[i].Quantity" required />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Type</label>
+                        <select name="BudgetItems[@i].ItemType" class="form-select">
+                            @{
+                                var itemType = Model.BudgetItems[i].ItemType;
+                            }
+                            <option value="Hardware" selected="@(itemType == "Hardware")">Hardware</option>
+                            <option value="Software" selected="@(itemType == "Software")">Software</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">ARCC ($)</label>
+                        <input type="number" name="BudgetItems[@i].ARCCAmount" class="form-control budget-num" min="0" step="0.01" value="@Model.BudgetItems[i].ARCCAmount" oninput="updateTotals()" />
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">College ($)</label>
+                        <input type="number" name="BudgetItems[@i].CollegeAmount" class="form-control budget-num" min="0" step="0.01" value="@Model.BudgetItems[i].CollegeAmount" oninput="updateTotals()" />
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">Dept ($)</label>
+                        <input type="number" name="BudgetItems[@i].DepartmentAmount" class="form-control budget-num" min="0" step="0.01" value="@Model.BudgetItems[i].DepartmentAmount" oninput="updateTotals()" />
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">Other ($)</label>
+                        <input type="number" name="BudgetItems[@i].OtherAmount" class="form-control budget-num" min="0" step="0.01" value="@Model.BudgetItems[i].OtherAmount" oninput="updateTotals()" />
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">Other Source</label>
+                        <input type="text" name="BudgetItems[@i].OtherSource" class="form-control" value="@Model.BudgetItems[i].OtherSource" />
+                    </div>
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-danger w-100" onclick="removeBudgetRow(this)">Remove</button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <button type="button" class="btn btn-outline-secondary mb-3" onclick="addBudgetRow()">
+        + Add Budget Item
+    </button>
+
+    <div class="card mb-4">
+        <div class="card-header"><strong>Funding Totals</strong></div>
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col">ARCC<br /><strong id="totalARCC">$0.00</strong></div>
+                <div class="col">College<br /><strong id="totalCollege">$0.00</strong></div>
+                <div class="col">Department<br /><strong id="totalDepartment">$0.00</strong></div>
+                <div class="col">Other<br /><strong id="totalOther">$0.00</strong></div>
+                <div class="col">Grand Total<br /><strong id="totalAll">$0.00</strong></div>
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Budget</button>
+    <a asp-action="Edit" asp-controller="Grants" asp-route-id="@Model.GrantId" class="btn btn-secondary">
+        Back to Grant Application
+    </a>
+</form>
+
+@section Scripts {
+    <script>
+        let rowIndex = @Model.BudgetItems.Count;
+
+        function addBudgetRow() {
+            const i = rowIndex++;
+            const row = document.createElement('div');
+            row.className = 'border rounded p-3 mb-3 budget-row';
+            row.innerHTML = `
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label">Item Name</label>
+                        <input type="text" name="BudgetItems[${i}].ItemName" class="form-control" required />
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">Qty</label>
+                        <input type="number" name="BudgetItems[${i}].Quantity" class="form-control" min="1" value="1" required />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Type</label>
+                        <select name="BudgetItems[${i}].ItemType" class="form-select">
+                            <option value="Hardware">Hardware</option>
+                            <option value="Software">Software</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">ARCC ($)</label>
+                        <input type="number" name="BudgetItems[${i}].ARCCAmount" class="form-control budget-num" min="0" step="0.01" value="0" oninput="updateTotals()" />
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">College ($)</label>
+                        <input type="number" name="BudgetItems[${i}].CollegeAmount" class="form-control budget-num" min="0" step="0.01" value="0" oninput="updateTotals()" />
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">Dept ($)</label>
+                        <input type="number" name="BudgetItems[${i}].DepartmentAmount" class="form-control budget-num" min="0" step="0.01" value="0" oninput="updateTotals()" />
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">Other ($)</label>
+                        <input type="number" name="BudgetItems[${i}].OtherAmount" class="form-control budget-num" min="0" step="0.01" value="0" oninput="updateTotals()" />
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">Other Source</label>
+                        <input type="text" name="BudgetItems[${i}].OtherSource" class="form-control" />
+                    </div>
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-danger w-100" onclick="removeBudgetRow(this)">Remove</button>
+                    </div>
+                </div>`;
+            document.getElementById('budgetItemsContainer').appendChild(row);
+            updateTotals();
+        }
+
+        function removeBudgetRow(btn) {
+            btn.closest('.budget-row').remove();
+            reindexRows();
+            updateTotals();
+        }
+
+        function reindexRows() {
+            const rows = document.querySelectorAll('#budgetItemsContainer .budget-row');
+            rows.forEach((row, i) => {
+                row.querySelectorAll('input, select').forEach(el => {
+                    if (el.name) {
+                        el.name = el.name.replace(/BudgetItems\[\d+\]/, `BudgetItems[${i}]`);
+                    }
+                });
+            });
+            rowIndex = rows.length;
+        }
+
+        function updateTotals() {
+            const rows = document.querySelectorAll('.budget-row');
+            let arcc = 0, college = 0, dept = 0, other = 0;
+            rows.forEach(row => {
+                arcc   += parseFloat(row.querySelector('[name$=".ARCCAmount"]')?.value) || 0;
+                college += parseFloat(row.querySelector('[name$=".CollegeAmount"]')?.value) || 0;
+                dept   += parseFloat(row.querySelector('[name$=".DepartmentAmount"]')?.value) || 0;
+                other  += parseFloat(row.querySelector('[name$=".OtherAmount"]')?.value) || 0;
+            });
+            document.getElementById('totalARCC').textContent = '$' + arcc.toFixed(2);
+            document.getElementById('totalCollege').textContent = '$' + college.toFixed(2);
+            document.getElementById('totalDepartment').textContent = '$' + dept.toFixed(2);
+            document.getElementById('totalOther').textContent = '$' + other.toFixed(2);
+            document.getElementById('totalAll').textContent = '$' + (arcc + college + dept + other).toFixed(2);
+        }
+
+        updateTotals();
+    </script>
+}
