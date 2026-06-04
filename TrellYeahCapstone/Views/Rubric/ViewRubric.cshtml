@@ -1,0 +1,69 @@
+@model TrellYeahCapstone.Models.RubricIndexViewModel
+
+@{
+    ViewData["Title"] = "View Rubric";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <h1 class="h2 mb-0">Rubric</h1>
+</div>
+
+@if (!Model.Criteria.Any())
+{
+    <div class="alert alert-info" role="alert">
+        No rubric criteria have been added yet.
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 22%;">Criterion</th>
+                    <th>Description</th>
+                    <th style="width: 14%;">Maximum score</th>
+                    <th style="width: 34%;">Rating suggestions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var criterion in Model.Criteria)
+                {
+                    <tr>
+                        <td>
+                            <strong>@criterion.Name</strong>
+                        </td>
+                        <td>@criterion.Description</td>
+                        <td>@criterion.MaximumScore</td>
+                        <td>
+                            @if (criterion.RatingSuggestions.Any())
+                            {
+                                <table class="table table-sm mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 70px;">Score</th>
+                                            <th>Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var suggestion in criterion.RatingSuggestions)
+                                        {
+                                            <tr>
+                                                <td>@suggestion.Score</td>
+                                                <td>@suggestion.Description</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                            else
+                            {
+                                <span>No rating suggestions have been added.</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

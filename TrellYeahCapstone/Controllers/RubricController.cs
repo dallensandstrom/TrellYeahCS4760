@@ -6,7 +6,7 @@ using TrellYeahCapstone.Models;
 
 namespace TrellYeahCapstone.Controllers
 {
-    [Authorize(Roles = "ARCCchair")]
+    [Authorize]
     public class RubricController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -16,7 +16,18 @@ namespace TrellYeahCapstone.Controllers
             _context = context;
         }
 
+        [Authorize(Roles = "Admin,ARCCchair")]
         public async Task<IActionResult> Index()
+        {
+            return View(await BuildRubricViewModelAsync());
+        }
+
+        public async Task<IActionResult> ViewRubric()
+        {
+            return View(await BuildRubricViewModelAsync());
+        }
+
+        private async Task<RubricIndexViewModel> BuildRubricViewModelAsync()
         {
             var viewModel = new RubricIndexViewModel
             {
@@ -33,11 +44,12 @@ namespace TrellYeahCapstone.Controllers
                     .ToList();
             }
 
-            return View(viewModel);
+            return viewModel;
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,ARCCchair")]
         public async Task<IActionResult> AddCriterion(string name, string description, int maximumScore)
         {
             if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(description) || maximumScore < 1)
@@ -61,6 +73,7 @@ namespace TrellYeahCapstone.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,ARCCchair")]
         public async Task<IActionResult> EditCriterion(int id, string name, string description, int maximumScore)
         {
             var criterion = await _context.RubricCriteria
@@ -98,6 +111,7 @@ namespace TrellYeahCapstone.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,ARCCchair")]
         public async Task<IActionResult> DeleteCriterion(int id)
         {
             var criterion = await _context.RubricCriteria
@@ -116,6 +130,7 @@ namespace TrellYeahCapstone.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,ARCCchair")]
         public async Task<IActionResult> AddRatingSuggestion(int criterionId, int score, string description)
         {
             var criterion = await _context.RubricCriteria.FindAsync(criterionId);
@@ -147,6 +162,7 @@ namespace TrellYeahCapstone.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,ARCCchair")]
         public async Task<IActionResult> EditRatingSuggestion(int id, int score, string description)
         {
             var suggestion = await _context.RubricRatingSuggestions
@@ -176,6 +192,7 @@ namespace TrellYeahCapstone.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,ARCCchair")]
         public async Task<IActionResult> DeleteRatingSuggestion(int id)
         {
             var suggestion = await _context.RubricRatingSuggestions.FindAsync(id);

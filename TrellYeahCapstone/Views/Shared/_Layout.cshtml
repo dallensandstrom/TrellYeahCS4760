@@ -26,7 +26,7 @@
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Admin" asp-action="Index">Admin</a>
                             </li>
                         }
-                        @if (User.IsInRole("ARCCchair"))
+                        @if (User.IsInRole("Admin") || User.IsInRole("ARCCchair"))
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Rubric" asp-action="Index">Rubric</a>
