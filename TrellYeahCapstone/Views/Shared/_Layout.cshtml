@@ -29,8 +29,7 @@
                         @if (User.IsInRole("Admin") || User.IsInRole("ARCCchair"))
                         {
                             <li class="nav-item">
-                                <!--Still Needs To Be Connected to a Page-->
-                                <a class="nav-link text-dark" asp-area="" asp-controller="" asp-action="">Rubric</a>
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Rubric" asp-action="Index">Rubric</a>
                             </li>
                         }
                         @if (User.Identity != null &&
