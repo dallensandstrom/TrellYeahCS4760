@@ -18,14 +18,14 @@ namespace TrellYeahCapstone.Models
             var seedUsers = await SeedRegularUsersAsync(userManager);
 
             await SeedCollegesAsync(db, seedUsers);
-            await SeedDepartmentsAsync(db, seedUsers);
+            await SeedDepartmentsAsync(userManager, db, seedUsers);
             await SeedArccChairAsync(userManager, seedUsers);
             await SeedRubricAsync(db);
         }
 
         private static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
         {
-            string[] roles = { "Admin", "ARCCchair" };
+            string[] roles = { "Admin", "ARCCchair", "ARCCmember", "DeptChair" };
 
             foreach (var role in roles)
             {
@@ -120,7 +120,7 @@ namespace TrellYeahCapstone.Models
             await db.SaveChangesAsync();
         }
 
-        private static async Task SeedDepartmentsAsync(ApplicationDbContext db, List<ApplicationUser> seedUsers)
+        private static async Task SeedDepartmentsAsync(UserManager<ApplicationUser> userManager, ApplicationDbContext db, List<ApplicationUser> seedUsers)
         {
             var engineeringCollege = await db.Colleges.FirstAsync(c => c.Name == "engeneering");
             var appliedScienceCollege = await db.Colleges.FirstAsync(c => c.Name == "applied science");
@@ -145,11 +145,15 @@ namespace TrellYeahCapstone.Models
                         CollegeId = departmentSeed.College.Id,
                         ChairUserId = departmentSeed.Chair.Id
                     });
+                    await userManager.UpdateAsync(departmentSeed.Chair);
+                    await userManager.AddToRoleAsync(departmentSeed.Chair, "DeptChair");
                 }
                 else
                 {
                     department.CollegeId = departmentSeed.College.Id;
                     department.ChairUserId = departmentSeed.Chair.Id;
+                    await userManager.UpdateAsync(departmentSeed.Chair);
+                    await userManager.AddToRoleAsync(departmentSeed.Chair, "DeptChair");
                 }
             }
 
@@ -177,6 +181,10 @@ namespace TrellYeahCapstone.Models
             if (!await userManager.IsInRoleAsync(arccChair, "ARCCchair"))
             {
                 await userManager.AddToRoleAsync(arccChair, "ARCCchair");
+            }
+            if (!await userManager.IsInRoleAsync(arccChair, "ARCCmember"))
+            {
+                await userManager.AddToRoleAsync(arccChair, "ARCCmember");
             }
         }
 

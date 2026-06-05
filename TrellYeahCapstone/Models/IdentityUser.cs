@@ -18,5 +18,7 @@ namespace TrellYeahCapstone.Models
         public bool IsArccCommitteeMember { get; set; }
 
         public bool IsArccCommitteeChair { get; set; }
+
+        
     }
 }

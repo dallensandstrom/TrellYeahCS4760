@@ -64,6 +64,7 @@ namespace TrellYeahCapstone.Controllers
 
             user.IsArccCommitteeMember = true;
             await _userManager.UpdateAsync(user);
+            await _userManager.AddToRoleAsync(user, "ARCCmember");
 
             TempData["StatusMessage"] = $"{GetUserDisplayName(user)} was added to the ARCC committee.";
             return RedirectToAction(nameof(Index));
@@ -85,6 +86,7 @@ namespace TrellYeahCapstone.Controllers
             user.IsArccCommitteeChair = false;
             await _userManager.UpdateAsync(user);
             await _userManager.RemoveFromRoleAsync(user, "ARCCchair");
+            await _userManager.RemoveFromRoleAsync(user, "ARCCmember");
 
             TempData["StatusMessage"] = $"{GetUserDisplayName(user)} was removed from the ARCC committee.";
             return RedirectToAction(nameof(Index));
@@ -117,6 +119,7 @@ namespace TrellYeahCapstone.Controllers
             selectedUser.IsArccCommitteeChair = true;
             await _userManager.UpdateAsync(selectedUser);
             await _userManager.AddToRoleAsync(selectedUser, "ARCCchair");
+            await _userManager.AddToRoleAsync(selectedUser, "ARCCmember");
 
             TempData["StatusMessage"] = $"{GetUserDisplayName(selectedUser)} is now the ARCC committee chair.";
             return RedirectToAction(nameof(Index));
@@ -180,6 +183,14 @@ namespace TrellYeahCapstone.Controllers
             });
 
             await _context.SaveChangesAsync();
+
+            var chair = await _userManager.FindByIdAsync(viewModel.ChairUserId);
+
+            if (chair != null) //Dallen - If chair user exists, update their role to DeptChair
+            {
+                await _userManager.UpdateAsync(chair);
+                await _userManager.AddToRoleAsync(chair, "DeptChair");
+            }
 
             TempData["StatusMessage"] = "Department added successfully.";
             return RedirectToAction(nameof(Index));

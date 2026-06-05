@@ -1,4 +1,5 @@
 ﻿@using Microsoft.AspNetCore.Identity
+@model TrellYeahCapstone.Controllers.HomeController.HomeIndexViewModel
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
 
@@ -18,18 +19,49 @@
         {
             <p>You are logged in as the ARCC Chair</p>
         }
-        else
+        else if (User.IsInRole("ARCCmember") && !User.IsInRole("ARCCchair"))
+        {
+            <p>You are logged in as an ARCC Member</p>
+        }
+        else if (!User.IsInRole("DeptChair"))
         {
             <p>
                 You are logged in, you may now apply for a grant.
             </p>
         }
+        if (User.IsInRole("DeptChair")) //Dallen - Dept Chair may not be mutually exclusive with other roles
+        {
+            @if (Model.ChairDepartmentName != null)
+            {
+                <span>You are the Department Chair of the @Model.ChairDepartmentName department.</span>
+            }
+            else
+            {
+                <span>You are a Department Chair, but unable to find department</span>
+            }
+            @if (Model.DepartmentUsers != null && Model.DepartmentUsers.Any())
+            {
+                <p>The following users are in your department:</p>
+                @foreach (var user in Model.DepartmentUsers)
+                {
+                    <p>
+                        @user.FirstName @user.LastName
+                    </p>
+                }
+            }
+            else
+            {
+                <p>Unable to detect any users assigned to your deparment</p>
+            }
+        }
     }
     else
     {
         <p>
-            To apply for a grant please<br />
-            <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Login">Login</a> or <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Register">Register</a>
+            To apply for a grant<br />
+            <span>
+                <a class="text-dark" asp-area="Identity" asp-page="/Account/Login">Login</a> or <a class="text-dark" asp-area="Identity" asp-page="/Account/Register">Register</a>
+            </span>
         </p>
     }
 </div>
