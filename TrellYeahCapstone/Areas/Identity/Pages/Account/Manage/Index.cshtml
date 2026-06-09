@@ -42,16 +42,31 @@
                 <label asp-for="Input.CollegeId"></label>
                 <span asp-validation-for="Input.CollegeId" class="text-danger"></span>
             </div>
+                @if (User.IsInRole("DeptChair"))
+                {
+                    <div class="form-floating mb-3">
+                        <select asp-for="Input.DepartmentId"
+                                asp-items="Model.DepartmentList"
+                                class="form-select" disabled>
+                            <option value="">Select Department</option>
+                        </select>
+                        <label asp-for="Input.DepartmentId"></label>
+                        <span asp-validation-for="Input.DepartmentId" class="text-danger"></span>
+                    </div>
+                }
+                else
+                {
+                    <div class="form-floating mb-3">
+                        <select asp-for="Input.DepartmentId"
+                                asp-items="Model.DepartmentList"
+                                class="form-select">
+                            <option value="">Select Department</option>
+                        </select>
+                        <label asp-for="Input.DepartmentId"></label>
+                        <span asp-validation-for="Input.DepartmentId" class="text-danger"></span>
+                    </div>
+                }
 
-            <div class="form-floating mb-3">
-                <select asp-for="Input.DepartmentId"
-                        asp-items="Model.DepartmentList"
-                        class="form-select">
-                    <option value="">Select Department</option>
-                </select>
-                <label asp-for="Input.DepartmentId"></label>
-                <span asp-validation-for="Input.DepartmentId" class="text-danger"></span>
-            </div>
 
             <button id="update-profile-button" type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
         </form>
