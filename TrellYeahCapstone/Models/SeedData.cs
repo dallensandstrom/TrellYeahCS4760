@@ -18,7 +18,7 @@ namespace TrellYeahCapstone.Models
 
             var seedUsers = await SeedRegularUsersAsync(userManager);
 
-            await SeedCollegesAsync(db, seedUsers);
+            await SeedCollegesAsync(userManager, db, seedUsers);
             await SeedDepartmentsAsync(userManager, db, seedUsers);
             await SeedArccChairAsync(userManager, seedUsers);
             await SeedArccMemberAsync(userManager, seedUsers);
@@ -79,13 +79,17 @@ namespace TrellYeahCapstone.Models
                     {
                         UserName = userEmail,
                         Email = userEmail,
-                        FirstName = "Regular",
-                        LastName = "User",
+                        FirstName = $"First{i}",
+                        LastName = $"Last{i}",
                         EmailConfirmed = true
                     };
 
                     await userManager.CreateAsync(seedUser, "Password1!");
                 }
+
+                seedUser.FirstName = $"First{i}";
+                seedUser.LastName = $"Last{i}";
+                await userManager.UpdateAsync(seedUser);
 
                 seedUsers.Add(seedUser);
             }
@@ -93,7 +97,7 @@ namespace TrellYeahCapstone.Models
             return seedUsers;
         }
 
-        private static async Task SeedCollegesAsync(ApplicationDbContext db, List<ApplicationUser> seedUsers)
+        private static async Task SeedCollegesAsync(UserManager<ApplicationUser> userManager, ApplicationDbContext db, List<ApplicationUser> seedUsers)
         {
             var collegeSeedData = new[]
             {
@@ -121,6 +125,14 @@ namespace TrellYeahCapstone.Models
             }
 
             await db.SaveChangesAsync();
+
+            foreach (var collegeSeed in collegeSeedData)
+            {
+                var college = await db.Colleges.FirstAsync(c => c.Name == collegeSeed.Name);
+                collegeSeed.Dean.CollegeId = college.Id;
+                collegeSeed.Dean.DepartmentId = null;
+                await userManager.UpdateAsync(collegeSeed.Dean);
+            }
         }
 
         private static async Task SeedDepartmentsAsync(UserManager<ApplicationUser> userManager, ApplicationDbContext db, List<ApplicationUser> seedUsers)
@@ -148,19 +160,29 @@ namespace TrellYeahCapstone.Models
                         CollegeId = departmentSeed.College.Id,
                         ChairUserId = departmentSeed.Chair.Id
                     });
-                    await userManager.UpdateAsync(departmentSeed.Chair);
-                    await userManager.AddToRoleAsync(departmentSeed.Chair, "DeptChair");
                 }
                 else
                 {
                     department.CollegeId = departmentSeed.College.Id;
                     department.ChairUserId = departmentSeed.Chair.Id;
-                    await userManager.UpdateAsync(departmentSeed.Chair);
-                    await userManager.AddToRoleAsync(departmentSeed.Chair, "DeptChair");
                 }
             }
 
             await db.SaveChangesAsync();
+
+            foreach (var departmentSeed in departmentSeedData)
+            {
+                var department = await db.Departments.FirstAsync(d => d.Name == departmentSeed.Name);
+                departmentSeed.Chair.CollegeId = departmentSeed.College.Id;
+                departmentSeed.Chair.DepartmentId = department.Id;
+
+                await userManager.UpdateAsync(departmentSeed.Chair);
+
+                if (!await userManager.IsInRoleAsync(departmentSeed.Chair, "DeptChair"))
+                {
+                    await userManager.AddToRoleAsync(departmentSeed.Chair, "DeptChair");
+                }
+            }
         }
 
         private static async Task SeedArccChairAsync(UserManager<ApplicationUser> userManager, List<ApplicationUser> seedUsers)
