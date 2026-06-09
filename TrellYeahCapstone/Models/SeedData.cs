@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using TrellYeahCapstone.Data;
+using TrellYeahCS4760.Models;
 
 namespace TrellYeahCapstone.Models
 {
@@ -20,7 +21,9 @@ namespace TrellYeahCapstone.Models
             await SeedCollegesAsync(db, seedUsers);
             await SeedDepartmentsAsync(userManager, db, seedUsers);
             await SeedArccChairAsync(userManager, seedUsers);
+            await SeedArccMemberAsync(userManager, seedUsers);
             await SeedRubricAsync(db);
+            await SeedSubmittedGrantAsync(db, seedUsers);
         }
 
         private static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
@@ -188,6 +191,25 @@ namespace TrellYeahCapstone.Models
             }
         }
 
+        private static async Task SeedArccMemberAsync(UserManager<ApplicationUser> userManager, List<ApplicationUser> seedUsers)
+        {
+            var arccMember = seedUsers[2];
+            arccMember.IsArccCommitteeMember = true;
+            arccMember.IsArccCommitteeChair = false;
+
+            await userManager.UpdateAsync(arccMember);
+
+            if (!await userManager.IsInRoleAsync(arccMember, "ARCCmember"))
+            {
+                await userManager.AddToRoleAsync(arccMember, "ARCCmember");
+            }
+
+            if (await userManager.IsInRoleAsync(arccMember, "ARCCchair"))
+            {
+                await userManager.RemoveFromRoleAsync(arccMember, "ARCCchair");
+            }
+        }
+
         private static async Task SeedRubricAsync(ApplicationDbContext db)
         {
             var criterion = await db.RubricCriteria
@@ -239,6 +261,68 @@ namespace TrellYeahCapstone.Models
                     suggestion.Description = suggestionSeed.Description;
                 }
             }
+
+            await db.SaveChangesAsync();
+        }
+
+        private static async Task SeedSubmittedGrantAsync(ApplicationDbContext db, List<ApplicationUser> seedUsers)
+        {
+            var grantOwner = seedUsers[0];
+            var grant = await db.Grants
+                .Include(g => g.BudgetItems)
+                .FirstOrDefaultAsync(g => g.Title == "TestGrant1");
+
+            if (grant == null)
+            {
+                grant = new Grant
+                {
+                    Title = "TestGrant1",
+                    UserId = grantOwner.Id,
+                    SubmittedAt = new DateTime(2026, 6, 9, 12, 0, 0),
+                    Status = "Submitted"
+                };
+
+                db.Grants.Add(grant);
+            }
+
+            grant.Description = "This is a test grant for seed data.";
+            grant.Justification = "This is to test our program.";
+            grant.Timeline = "Today";
+            grant.ProjectDirectorUserId = grantOwner.Id;
+            grant.PrincipalInvestigatorUserId = grantOwner.Id;
+            grant.WeberStateStudentsBenefited = 4;
+            grant.BenefitsMultipleDepartments = true;
+            grant.NumberOfDepartmentsBenefited = 2;
+            grant.UsesHumanSubjects = false;
+            grant.SupportingDocument1Path = "/seed-files/TestFile1.pdf";
+            grant.SupportingDocument2Path = null;
+            grant.SupportingDocument3Path = null;
+            grant.IRBApprovalFilePath = null;
+            grant.Status = "Submitted";
+            grant.SubmittedAt ??= new DateTime(2026, 6, 9, 12, 0, 0);
+
+            await db.SaveChangesAsync();
+
+            var budgetItem = grant.BudgetItems.FirstOrDefault(item => item.ItemName == "Stuff");
+
+            if (budgetItem == null)
+            {
+                budgetItem = new BudgetItem
+                {
+                    GrantId = grant.GrantId,
+                    ItemName = "Stuff"
+                };
+
+                db.BudgetItems.Add(budgetItem);
+            }
+
+            budgetItem.Quantity = 1;
+            budgetItem.ItemType = "Hardware";
+            budgetItem.ARCCAmount = 100;
+            budgetItem.CollegeAmount = 200;
+            budgetItem.DepartmentAmount = 300;
+            budgetItem.OtherAmount = 400;
+            budgetItem.OtherSource = null;
 
             await db.SaveChangesAsync();
         }

@@ -1,0 +1,48 @@
+@model List<TrellYeahCapstone.Models.GrantReviewSummaryViewModel>
+
+@{
+    ViewData["Title"] = "Review Submitted Applications";
+}
+
+<h1>Review Submitted Applications</h1>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        No submitted grant applications are ready for review.
+    </div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Grant title</th>
+                <th>Principal investigator</th>
+                <th>Money requested from ARCC</th>
+                <th>Submitted</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var grant in Model)
+            {
+                <tr>
+                    <td>@grant.Title</td>
+                    <td>@grant.PrincipalInvestigatorName</td>
+                    <td>@grant.MoneyRequestedFromArcc.ToString("C")</td>
+                    <td>
+                        @(grant.SubmittedAt.HasValue
+                            ? grant.SubmittedAt.Value.ToString("MMM d, yyyy h:mm tt")
+                            : "Not submitted")
+                    </td>
+                    <td class="text-end">
+                        <a asp-controller="Grants" asp-action="Review" asp-route-id="@grant.GrantId" class="btn btn-sm btn-outline-primary">
+                            Review
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
