@@ -1,0 +1,85 @@
+@model TrellYeahCapstone.Models.AllocationViewModel
+
+@{
+    ViewData["Title"] = "Grant Allocation";
+}
+
+<h1>Grant Allocation</h1>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Allocation" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="mb-3">
+                <label asp-for="CurrentRoundAmount" class="form-label"></label>
+                <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    <input asp-for="CurrentRoundAmount" class="form-control" type="number" min="0" step="0.01" />
+                </div>
+                <span asp-validation-for="CurrentRoundAmount" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="PreviousRoundAmount" class="form-label"></label>
+                <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    <input asp-for="PreviousRoundAmount" class="form-control" type="number" min="0" step="0.01" />
+                </div>
+                <span asp-validation-for="PreviousRoundAmount" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="CutoutPercentage" class="form-label"></label>
+                <div class="input-group">
+                    <input asp-for="CutoutPercentage" class="form-control" type="number" min="0" max="100" step="0.01" />
+                    <span class="input-group-text">%</span>
+                </div>
+                <span asp-validation-for="CutoutPercentage" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    </div>
+</div>
+
+<section class="mt-5">
+    <h2 class="h4">Past Submitted Allocations</h2>
+    @if (!Model.PastAllocations.Any())
+    {
+        <div class="alert alert-info">No allocations have been submitted yet.</div>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Submitted</th>
+                    <th>Current Round</th>
+                    <th>Previous Round</th>
+                    <th>Cutout %</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in Model.PastAllocations)
+                {
+                    <tr>
+                        <td>@a.CreatedAt.ToString("MMM d, yyyy h:mm tt")</td>
+                        <td>@a.CurrentRoundAmount.ToString("C")</td>
+                        <td>@a.PreviousRoundAmount.ToString("C")</td>
+                        <td>@a.CutoutPercentage.ToString("0.##")%</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}
