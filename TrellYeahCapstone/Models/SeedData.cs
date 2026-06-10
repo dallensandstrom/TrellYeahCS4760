@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using TrellYeahCapstone.Data;
+using TrellYeahCS4760.Models;
 
 namespace TrellYeahCapstone.Models
 {
@@ -17,10 +18,12 @@ namespace TrellYeahCapstone.Models
 
             var seedUsers = await SeedRegularUsersAsync(userManager);
 
-            await SeedCollegesAsync(db, seedUsers);
+            await SeedCollegesAsync(userManager, db, seedUsers);
             await SeedDepartmentsAsync(userManager, db, seedUsers);
             await SeedArccChairAsync(userManager, seedUsers);
+            await SeedArccMemberAsync(userManager, seedUsers);
             await SeedRubricAsync(db);
+            await SeedSubmittedGrantAsync(db, seedUsers);
         }
 
         private static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
@@ -76,13 +79,17 @@ namespace TrellYeahCapstone.Models
                     {
                         UserName = userEmail,
                         Email = userEmail,
-                        FirstName = "Regular",
-                        LastName = "User",
+                        FirstName = $"First{i}",
+                        LastName = $"Last{i}",
                         EmailConfirmed = true
                     };
 
                     await userManager.CreateAsync(seedUser, "Password1!");
                 }
+
+                seedUser.FirstName = $"First{i}";
+                seedUser.LastName = $"Last{i}";
+                await userManager.UpdateAsync(seedUser);
 
                 seedUsers.Add(seedUser);
             }
@@ -90,7 +97,7 @@ namespace TrellYeahCapstone.Models
             return seedUsers;
         }
 
-        private static async Task SeedCollegesAsync(ApplicationDbContext db, List<ApplicationUser> seedUsers)
+        private static async Task SeedCollegesAsync(UserManager<ApplicationUser> userManager, ApplicationDbContext db, List<ApplicationUser> seedUsers)
         {
             var collegeSeedData = new[]
             {
@@ -118,6 +125,14 @@ namespace TrellYeahCapstone.Models
             }
 
             await db.SaveChangesAsync();
+
+            foreach (var collegeSeed in collegeSeedData)
+            {
+                var college = await db.Colleges.FirstAsync(c => c.Name == collegeSeed.Name);
+                collegeSeed.Dean.CollegeId = college.Id;
+                collegeSeed.Dean.DepartmentId = null;
+                await userManager.UpdateAsync(collegeSeed.Dean);
+            }
         }
 
         private static async Task SeedDepartmentsAsync(UserManager<ApplicationUser> userManager, ApplicationDbContext db, List<ApplicationUser> seedUsers)
@@ -145,19 +160,29 @@ namespace TrellYeahCapstone.Models
                         CollegeId = departmentSeed.College.Id,
                         ChairUserId = departmentSeed.Chair.Id
                     });
-                    await userManager.UpdateAsync(departmentSeed.Chair);
-                    await userManager.AddToRoleAsync(departmentSeed.Chair, "DeptChair");
                 }
                 else
                 {
                     department.CollegeId = departmentSeed.College.Id;
                     department.ChairUserId = departmentSeed.Chair.Id;
-                    await userManager.UpdateAsync(departmentSeed.Chair);
-                    await userManager.AddToRoleAsync(departmentSeed.Chair, "DeptChair");
                 }
             }
 
             await db.SaveChangesAsync();
+
+            foreach (var departmentSeed in departmentSeedData)
+            {
+                var department = await db.Departments.FirstAsync(d => d.Name == departmentSeed.Name);
+                departmentSeed.Chair.CollegeId = departmentSeed.College.Id;
+                departmentSeed.Chair.DepartmentId = department.Id;
+
+                await userManager.UpdateAsync(departmentSeed.Chair);
+
+                if (!await userManager.IsInRoleAsync(departmentSeed.Chair, "DeptChair"))
+                {
+                    await userManager.AddToRoleAsync(departmentSeed.Chair, "DeptChair");
+                }
+            }
         }
 
         private static async Task SeedArccChairAsync(UserManager<ApplicationUser> userManager, List<ApplicationUser> seedUsers)
@@ -185,6 +210,25 @@ namespace TrellYeahCapstone.Models
             if (!await userManager.IsInRoleAsync(arccChair, "ARCCmember"))
             {
                 await userManager.AddToRoleAsync(arccChair, "ARCCmember");
+            }
+        }
+
+        private static async Task SeedArccMemberAsync(UserManager<ApplicationUser> userManager, List<ApplicationUser> seedUsers)
+        {
+            var arccMember = seedUsers[2];
+            arccMember.IsArccCommitteeMember = true;
+            arccMember.IsArccCommitteeChair = false;
+
+            await userManager.UpdateAsync(arccMember);
+
+            if (!await userManager.IsInRoleAsync(arccMember, "ARCCmember"))
+            {
+                await userManager.AddToRoleAsync(arccMember, "ARCCmember");
+            }
+
+            if (await userManager.IsInRoleAsync(arccMember, "ARCCchair"))
+            {
+                await userManager.RemoveFromRoleAsync(arccMember, "ARCCchair");
             }
         }
 
@@ -239,6 +283,68 @@ namespace TrellYeahCapstone.Models
                     suggestion.Description = suggestionSeed.Description;
                 }
             }
+
+            await db.SaveChangesAsync();
+        }
+
+        private static async Task SeedSubmittedGrantAsync(ApplicationDbContext db, List<ApplicationUser> seedUsers)
+        {
+            var grantOwner = seedUsers[0];
+            var grant = await db.Grants
+                .Include(g => g.BudgetItems)
+                .FirstOrDefaultAsync(g => g.Title == "TestGrant1");
+
+            if (grant == null)
+            {
+                grant = new Grant
+                {
+                    Title = "TestGrant1",
+                    UserId = grantOwner.Id,
+                    SubmittedAt = new DateTime(2026, 6, 9, 12, 0, 0),
+                    Status = "Submitted"
+                };
+
+                db.Grants.Add(grant);
+            }
+
+            grant.Description = "This is a test grant for seed data.";
+            grant.Justification = "This is to test our program.";
+            grant.Timeline = "Today";
+            grant.ProjectDirectorUserId = grantOwner.Id;
+            grant.PrincipalInvestigatorUserId = grantOwner.Id;
+            grant.WeberStateStudentsBenefited = 4;
+            grant.BenefitsMultipleDepartments = true;
+            grant.NumberOfDepartmentsBenefited = 2;
+            grant.UsesHumanSubjects = false;
+            grant.SupportingDocument1Path = "/seed-files/TestFile1.pdf";
+            grant.SupportingDocument2Path = null;
+            grant.SupportingDocument3Path = null;
+            grant.IRBApprovalFilePath = null;
+            grant.Status = "Submitted";
+            grant.SubmittedAt ??= new DateTime(2026, 6, 9, 12, 0, 0);
+
+            await db.SaveChangesAsync();
+
+            var budgetItem = grant.BudgetItems.FirstOrDefault(item => item.ItemName == "Stuff");
+
+            if (budgetItem == null)
+            {
+                budgetItem = new BudgetItem
+                {
+                    GrantId = grant.GrantId,
+                    ItemName = "Stuff"
+                };
+
+                db.BudgetItems.Add(budgetItem);
+            }
+
+            budgetItem.Quantity = 1;
+            budgetItem.ItemType = "Hardware";
+            budgetItem.ARCCAmount = 100;
+            budgetItem.CollegeAmount = 200;
+            budgetItem.DepartmentAmount = 300;
+            budgetItem.OtherAmount = 400;
+            budgetItem.OtherSource = null;
 
             await db.SaveChangesAsync();
         }

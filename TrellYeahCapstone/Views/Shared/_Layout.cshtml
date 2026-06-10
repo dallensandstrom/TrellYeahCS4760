@@ -32,6 +32,12 @@
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Rubric" asp-action="Index">Rubric</a>
                             </li>
                         }
+                        @if (User.IsInRole("ARCCmember") || User.IsInRole("ARCCchair"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="UserDashboard" asp-action="Review">Review</a>
+                            </li>
+                        }
                         @if (User.Identity != null &&
                              User.Identity.IsAuthenticated &&
                              !User.IsInRole("Admin"))

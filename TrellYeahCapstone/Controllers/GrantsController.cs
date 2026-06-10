@@ -383,6 +383,33 @@ namespace TrellYeahCapstone.Controllers
             return View(grant);
         }
 
+        [Authorize(Roles = "ARCCmember,ARCCchair")]
+        public async Task<IActionResult> Review(int id)
+        {
+            var grant = await _context.Grants
+                .Include(g => g.BudgetItems)
+                .FirstOrDefaultAsync(g => g.GrantId == id && g.Status == "Submitted");
+
+            if (grant == null)
+            {
+                return NotFound();
+            }
+
+            var projectDirector = await _context.Users.FindAsync(grant.ProjectDirectorUserId);
+            var principalInvestigator = await _context.Users.FindAsync(grant.PrincipalInvestigatorUserId);
+
+            var viewModel = new GrantReviewDetailsViewModel
+            {
+                Grant = grant,
+                ProjectDirectorName = projectDirector == null ? "Unknown user" : GetUserDisplayName(projectDirector),
+                PrincipalInvestigatorName = principalInvestigator == null ? "Unknown user" : GetUserDisplayName(principalInvestigator),
+                MoneyRequestedFromArcc = grant.BudgetItems.Sum(item => item.ARCCAmount),
+                FileLinks = GetGrantFileLinks(grant)
+            };
+
+            return View(viewModel);
+        }
+
         [HttpGet]
         public async Task<IActionResult> BudgetWorksheet(int id)
         {
@@ -428,6 +455,39 @@ namespace TrellYeahCapstone.Controllers
 
             TempData["SuccessMessage"] = "Budget worksheet saved!";
             return RedirectToAction("BudgetWorksheet", new { id });
+        }
+
+        private static string GetUserDisplayName(ApplicationUser user)
+        {
+            var fullName = $"{user.FirstName} {user.LastName}".Trim();
+
+            return string.IsNullOrWhiteSpace(fullName)
+                ? user.Email ?? user.UserName ?? user.Id
+                : fullName;
+        }
+
+        private static List<GrantFileLinkViewModel> GetGrantFileLinks(Grant grant)
+        {
+            var files = new List<GrantFileLinkViewModel>();
+
+            AddFileLink(files, "Supporting Document 1", grant.SupportingDocument1Path);
+            AddFileLink(files, "Supporting Document 2", grant.SupportingDocument2Path);
+            AddFileLink(files, "Supporting Document 3", grant.SupportingDocument3Path);
+            AddFileLink(files, "IRB Approval File", grant.IRBApprovalFilePath);
+
+            return files;
+        }
+
+        private static void AddFileLink(List<GrantFileLinkViewModel> files, string label, string? path)
+        {
+            if (!string.IsNullOrWhiteSpace(path))
+            {
+                files.Add(new GrantFileLinkViewModel
+                {
+                    Label = label,
+                    Url = path
+                });
+            }
         }
     }
 }
