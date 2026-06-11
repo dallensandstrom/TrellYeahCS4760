@@ -243,8 +243,8 @@ namespace TrellYeahCapstone.Data.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(25)
-                        .HasColumnType("nvarchar(25)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime?>("SubmittedAt")
                         .HasColumnType("datetime2");
