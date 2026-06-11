@@ -44,6 +44,16 @@
                                 <a class="nav-link text-dark" asp-controller="UserDashboard" asp-action="Allocation">Allocation</a>
                             </li>
                         }
+                        @if (User.IsInRole("DeptChair"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark"
+                                   asp-controller="DepartmentChair"
+                                   asp-action="Index">
+                                    Department Review
+                                </a>
+                            </li>
+                        }
                         @if (User.Identity != null &&
                              User.Identity.IsAuthenticated &&
                              !User.IsInRole("Admin"))

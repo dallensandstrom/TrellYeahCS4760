@@ -9,6 +9,8 @@ namespace TrellYeahCapstone.Models
         public string PrincipalInvestigatorName { get; set; } = string.Empty;
 
         public decimal MoneyRequestedFromArcc { get; set; }
+        public decimal MoneyRequestedFromCollege { get; set; }
+        public decimal MoneyRequestedFromDepartment { get; set; }
 
         public DateTime? SubmittedAt { get; set; }
     }
