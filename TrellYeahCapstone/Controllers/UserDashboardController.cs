@@ -84,5 +84,41 @@ namespace TrellYeahCS4760.Controllers
                 ? user.Email ?? user.UserName ?? user.Id
                 : fullName;
         }
+
+        [Authorize(Roles = "ARCCchair")]
+        public async Task<IActionResult> Allocation()
+        {
+            var model = new AllocationViewModel
+            {
+                PastAllocations = await _context.GrantAllocations
+                    .OrderByDescending(a => a.CreatedAt)
+                    .ToListAsync()
+            };
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "ARCCchair")]
+        public async Task<IActionResult> Allocation(AllocationViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            _context.GrantAllocations.Add(new GrantAllocation
+            {
+                CurrentRoundAmount = model.CurrentRoundAmount,
+                PreviousRoundAmount = model.PreviousRoundAmount,
+                CutoutPercentage = model.CutoutPercentage,
+                CreatedAt = DateTime.Now
+            });
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Allocation submitted successfully!";
+            return RedirectToAction(nameof(Allocation));
+        }
     }
 }
