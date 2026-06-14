@@ -17,7 +17,7 @@ namespace TrellYeahCapstone.Models
 
             var seedUsers = await SeedRegularUsersAsync(userManager);
 
-            await SeedCollegesAsync(db, seedUsers);
+            await SeedCollegesAsync(userManager, db, seedUsers);
             await SeedDepartmentsAsync(userManager, db, seedUsers);
             await SeedArccChairAsync(userManager, seedUsers);
             await SeedRubricAsync(db);
@@ -25,7 +25,7 @@ namespace TrellYeahCapstone.Models
 
         private static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
         {
-            string[] roles = { "Admin", "ARCCchair", "ARCCmember", "DeptChair" };
+            string[] roles = { "Admin", "ARCCchair", "ARCCmember", "DeptChair", "CollegeDean" };
 
             foreach (var role in roles)
             {
@@ -90,7 +90,7 @@ namespace TrellYeahCapstone.Models
             return seedUsers;
         }
 
-        private static async Task SeedCollegesAsync(ApplicationDbContext db, List<ApplicationUser> seedUsers)
+        private static async Task SeedCollegesAsync(UserManager<ApplicationUser> userManager, ApplicationDbContext db, List<ApplicationUser> seedUsers)
         {
             var collegeSeedData = new[]
             {
@@ -118,6 +118,18 @@ namespace TrellYeahCapstone.Models
             }
 
             await db.SaveChangesAsync();
+
+            foreach (var collegeSeed in collegeSeedData)
+            {
+                var college = await db.Colleges.FirstAsync(c => c.Name == collegeSeed.Name);
+                collegeSeed.Dean.CollegeId = college.Id;
+                collegeSeed.Dean.DepartmentId = null;
+                await userManager.UpdateAsync(collegeSeed.Dean);
+                if (!await userManager.IsInRoleAsync(collegeSeed.Dean, "CollegeDean"))
+                {
+                    await userManager.AddToRoleAsync(collegeSeed.Dean, "CollegeDean");
+                }
+            }
         }
 
         private static async Task SeedDepartmentsAsync(UserManager<ApplicationUser> userManager, ApplicationDbContext db, List<ApplicationUser> seedUsers)
