@@ -1,0 +1,58 @@
+﻿@model List<TrellYeahCapstone.Models.GrantReviewSummaryViewModel>
+
+@{
+    ViewData["Title"] = "Department Chair Review";
+}
+
+<h1>Department Chair Review</h1>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        No submitted grant applications are ready for your department review.
+    </div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Grant title</th>
+                <th>Principal investigator</th>
+                <th>Money requested from College</th>
+                <th>Money requested from Department</th>
+                <th>Submitted</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var grant in Model)
+            {
+                <tr>
+                    <td>@grant.Title</td>
+                    <td>@grant.PrincipalInvestigatorName</td>
+                    <td>@grant.MoneyRequestedFromCollege.ToString("C")</td>
+                    <td>@grant.MoneyRequestedFromDepartment.ToString("C")</td>
+                    <td>
+                        @(grant.SubmittedAt?.ToString("MMM d, yyyy h:mm tt") ?? "Not submitted")
+                    </td>
+                    <td class="text-end">
+                        <a asp-controller="DepartmentChair"
+                           asp-action="Review"
+                           asp-route-id="@grant.GrantId"
+                           class="btn btn-sm btn-outline-primary">
+                            View Application
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

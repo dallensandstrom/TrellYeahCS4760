@@ -243,8 +243,8 @@ namespace TrellYeahCapstone.Data.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(25)
-                        .HasColumnType("nvarchar(25)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime?>("SubmittedAt")
                         .HasColumnType("datetime2");
@@ -418,6 +418,31 @@ namespace TrellYeahCapstone.Data.Migrations
                     b.ToTable("Departments");
                 });
 
+            modelBuilder.Entity("TrellYeahCapstone.Models.GrantAllocation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("CurrentRoundAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("CutoutPercentage")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<decimal>("PreviousRoundAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("GrantAllocations");
+                });
+
             modelBuilder.Entity("TrellYeahCapstone.Models.RubricCriterion", b =>
                 {
                     b.Property<int>("RubricCriterionId")
@@ -521,17 +546,6 @@ namespace TrellYeahCapstone.Data.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("TrellYeahCapstone.Models.Department", b =>
-                {
-                    b.HasOne("TrellYeahCapstone.Models.College", "College")
-                        .WithMany("Departments")
-                        .HasForeignKey("CollegeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("College");
-                });
-
             modelBuilder.Entity("TrellYeahCS4760.Models.BudgetItem", b =>
                 {
                     b.HasOne("TrellYeahCS4760.Models.Grant", "Grant")
@@ -541,6 +555,17 @@ namespace TrellYeahCapstone.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Grant");
+                });
+
+            modelBuilder.Entity("TrellYeahCapstone.Models.Department", b =>
+                {
+                    b.HasOne("TrellYeahCapstone.Models.College", "College")
+                        .WithMany("Departments")
+                        .HasForeignKey("CollegeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("College");
                 });
 
             modelBuilder.Entity("TrellYeahCapstone.Models.RubricRatingSuggestion", b =>
@@ -554,14 +579,14 @@ namespace TrellYeahCapstone.Data.Migrations
                     b.Navigation("RubricCriterion");
                 });
 
-            modelBuilder.Entity("TrellYeahCapstone.Models.College", b =>
-                {
-                    b.Navigation("Departments");
-                });
-
             modelBuilder.Entity("TrellYeahCS4760.Models.Grant", b =>
                 {
                     b.Navigation("BudgetItems");
+                });
+
+            modelBuilder.Entity("TrellYeahCapstone.Models.College", b =>
+                {
+                    b.Navigation("Departments");
                 });
 
             modelBuilder.Entity("TrellYeahCapstone.Models.RubricCriterion", b =>

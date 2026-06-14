@@ -77,7 +77,7 @@ namespace TrellYeahCS4760.Models
         public string? Timeline { get; set; }
 
         [Required]
-        [StringLength(25)]
+        [StringLength(50)]
         public string Status { get; set; } = "In Progress";
 
         [NotMapped]
