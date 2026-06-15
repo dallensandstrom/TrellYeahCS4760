@@ -28,7 +28,7 @@ namespace TrellYeahCapstone.Models
 
         private static async Task SeedRolesAsync(RoleManager<IdentityRole> roleManager)
         {
-            string[] roles = { "Admin", "ARCCchair", "ARCCmember", "DeptChair" };
+            string[] roles = { "Admin", "ARCCchair", "ARCCmember", "DeptChair", "CollegeDean" };
 
             foreach (var role in roles)
             {
@@ -132,6 +132,10 @@ namespace TrellYeahCapstone.Models
                 collegeSeed.Dean.CollegeId = college.Id;
                 collegeSeed.Dean.DepartmentId = null;
                 await userManager.UpdateAsync(collegeSeed.Dean);
+                if (!await userManager.IsInRoleAsync(collegeSeed.Dean, "CollegeDean"))
+                {
+                    await userManager.AddToRoleAsync(collegeSeed.Dean, "CollegeDean");
+                }
             }
         }
 

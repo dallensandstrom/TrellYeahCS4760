@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using TrellYeahCapstone.Data;
 using TrellYeahCapstone.Models;
 
@@ -150,6 +151,14 @@ namespace TrellYeahCapstone.Controllers
             });
 
             await _context.SaveChangesAsync();
+
+            var dean = await _userManager.FindByIdAsync(viewModel.DeanUserId);
+
+            if (dean != null) //Dallen - If dean user exists, update their role to CollegeDean
+            {
+                await _userManager.UpdateAsync(dean);
+                await _userManager.AddToRoleAsync(dean, "CollegeDean");
+            }
 
             TempData["StatusMessage"] = "College added successfully.";
             return RedirectToAction(nameof(Index));

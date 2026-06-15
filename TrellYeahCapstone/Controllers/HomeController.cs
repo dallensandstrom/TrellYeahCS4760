@@ -22,6 +22,9 @@ namespace TrellYeahCapstone.Controllers
         {
             public string? ChairDepartmentName { get; set; }
             public List<ApplicationUser> DepartmentUsers { get; set; } = new();
+            public string? DeanCollegeName { get; set; }
+            public List<ApplicationUser> CollegeMembers { get; set; } = new();
+
         }
 
         public async Task<IActionResult> Index()
@@ -36,6 +39,15 @@ namespace TrellYeahCapstone.Controllers
                 {
                     model.ChairDepartmentName = department.Name;
                     model.DepartmentUsers = await _userManager.Users.Where(u => u.DepartmentId == department.Id && u.Id != user.Id).ToListAsync(); //Dallen - Get list of all members of department that are not the chair
+                }
+            }
+            else if (user != null && User.IsInRole("CollegeDean"))
+            {
+                var college = await _context.Colleges.FirstOrDefaultAsync(c => c.DeanUserId == user.Id); //Dallen - Get college that this user is dean of
+                if (college != null)
+                {
+                    model.DeanCollegeName = college.Name;
+                    model.CollegeMembers = await _userManager.Users.Where(u => u.CollegeId == college.Id && u.Id != user.Id).ToListAsync(); //Dallen - Get list of all members of the college that are not the dean
                 }
             }
 

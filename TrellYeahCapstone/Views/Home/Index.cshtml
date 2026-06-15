@@ -54,6 +54,31 @@
                 <p>Unable to detect any users assigned to your deparment</p>
             }
         }
+        if (User.IsInRole("CollegeDean")) //Dallen - College Dean may not be mutually exclusive with other roles
+        {
+            @if (Model.DeanCollegeName != null)
+            {
+                <span>You are the College Dean of the @Model.DeanCollegeName college.</span>
+            }
+            else
+            {
+                <span>You are a College Dean, but unable to find college</span>
+            }
+            @if(Model.CollegeMembers != null && Model.CollegeMembers.Any())
+            {
+                <p>The following users are in your college:</p>
+                @foreach(var user in Model.CollegeMembers)
+                {
+                    <p>
+                        @user.FirstName @user.LastName
+                    </p>
+                }
+            }
+            else
+            {
+                <p>Unable to detect any users in your college</p>
+            }
+        }
     }
     else
     {
