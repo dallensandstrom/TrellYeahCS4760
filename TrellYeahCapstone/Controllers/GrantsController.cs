@@ -386,6 +386,12 @@ namespace TrellYeahCapstone.Controllers
         [Authorize(Roles = "ARCCmember,ARCCchair")]
         public async Task<IActionResult> Review(int id)
         {
+            var currentUserId = _userManager.GetUserId(User);
+            if (string.IsNullOrWhiteSpace(currentUserId))
+            {
+                return Challenge();
+            }
+
             var grant = await _context.Grants
                 .Include(g => g.BudgetItems)
                 .FirstOrDefaultAsync(g => g.GrantId == id && g.Status == "Submitted");
@@ -404,10 +410,82 @@ namespace TrellYeahCapstone.Controllers
                 ProjectDirectorName = projectDirector == null ? "Unknown user" : GetUserDisplayName(projectDirector),
                 PrincipalInvestigatorName = principalInvestigator == null ? "Unknown user" : GetUserDisplayName(principalInvestigator),
                 MoneyRequestedFromArcc = grant.BudgetItems.Sum(item => item.ARCCAmount),
-                FileLinks = GetGrantFileLinks(grant)
+                FileLinks = GetGrantFileLinks(grant),
+                RubricScores = await GetRubricScoresAsync(grant.GrantId, currentUserId)
             };
 
             return View(viewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "ARCCmember,ARCCchair")]
+        public async Task<IActionResult> SaveReviewScores(int id, Dictionary<int, int> scores)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+            if (string.IsNullOrWhiteSpace(currentUserId))
+            {
+                return Challenge();
+            }
+
+            var grantExists = await _context.Grants
+                .AnyAsync(g => g.GrantId == id && g.Status == "Submitted");
+
+            if (!grantExists)
+            {
+                return NotFound();
+            }
+
+            var criteria = await _context.RubricCriteria
+                .Include(criterion => criterion.RatingSuggestions)
+                .ToListAsync();
+
+            foreach (var criterion in criteria)
+            {
+                if (!scores.TryGetValue(criterion.RubricCriterionId, out var selectedScore))
+                {
+                    TempData["ErrorMessage"] = "Choose a score for each rubric criterion before saving.";
+                    return RedirectToAction(nameof(Review), new { id });
+                }
+
+                var allowedScores = criterion.RatingSuggestions.Select(suggestion => suggestion.Score).ToHashSet();
+                if (!allowedScores.Contains(selectedScore))
+                {
+                    TempData["ErrorMessage"] = "One or more selected scores are not valid for the current rubric.";
+                    return RedirectToAction(nameof(Review), new { id });
+                }
+            }
+
+            var existingScores = await _context.GrantRubricScores
+                .Where(score => score.GrantId == id && score.ReviewerUserId == currentUserId)
+                .ToListAsync();
+
+            foreach (var criterion in criteria)
+            {
+                var selectedScore = scores[criterion.RubricCriterionId];
+                var existingScore = existingScores
+                    .FirstOrDefault(score => score.RubricCriterionId == criterion.RubricCriterionId);
+
+                if (existingScore == null)
+                {
+                    _context.GrantRubricScores.Add(new GrantRubricScore
+                    {
+                        GrantId = id,
+                        RubricCriterionId = criterion.RubricCriterionId,
+                        ReviewerUserId = currentUserId,
+                        Score = selectedScore
+                    });
+                }
+                else
+                {
+                    existingScore.Score = selectedScore;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Rubric scores saved.";
+            return RedirectToAction(nameof(Review), new { id });
         }
 
         [HttpGet]
@@ -488,6 +566,34 @@ namespace TrellYeahCapstone.Controllers
                     Url = path
                 });
             }
+        }
+
+        private async Task<List<GrantReviewCriterionScoreViewModel>> GetRubricScoresAsync(int grantId, string reviewerUserId)
+        {
+            var criteria = await _context.RubricCriteria
+                .Include(criterion => criterion.RatingSuggestions)
+                .OrderBy(criterion => criterion.RubricCriterionId)
+                .ToListAsync();
+
+            var savedScores = await _context.GrantRubricScores
+                .Where(score => score.GrantId == grantId && score.ReviewerUserId == reviewerUserId)
+                .ToDictionaryAsync(score => score.RubricCriterionId, score => score.Score);
+
+            return criteria
+                .Select(criterion => new GrantReviewCriterionScoreViewModel
+                {
+                    RubricCriterionId = criterion.RubricCriterionId,
+                    Name = criterion.Name,
+                    Description = criterion.Description,
+                    MaximumScore = criterion.MaximumScore,
+                    SelectedScore = savedScores.TryGetValue(criterion.RubricCriterionId, out var savedScore)
+                        ? savedScore
+                        : null,
+                    RatingSuggestions = criterion.RatingSuggestions
+                        .OrderByDescending(suggestion => suggestion.Score)
+                        .ToList()
+                })
+                .ToList();
         }
     }
 }
