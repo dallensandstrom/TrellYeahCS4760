@@ -13,5 +13,7 @@ namespace TrellYeahCapstone.Models
         public decimal MoneyRequestedFromDepartment { get; set; }
 
         public DateTime? SubmittedAt { get; set; }
+
+        public string Status { get; set; } = string.Empty;
     }
 }

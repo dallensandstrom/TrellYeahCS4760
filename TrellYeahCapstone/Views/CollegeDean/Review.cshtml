@@ -1,0 +1,122 @@
+@model TrellYeahCapstone.Models.GrantReviewDetailsViewModel
+
+@{
+    ViewData["Title"] = "College Dean Grant Review";
+    var grant = Model.Grant;
+    var totalCollege = grant.BudgetItems.Sum(item => item.CollegeAmount);
+    var totalDepartment = grant.BudgetItems.Sum(item => item.DepartmentAmount);
+    var totalOther = grant.BudgetItems.Sum(item => item.OtherAmount);
+    var grandTotal = Model.MoneyRequestedFromArcc + totalCollege + totalDepartment + totalOther;
+}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h1 class="h2 mb-1">College Dean Review</h1>
+        <p class="text-muted mb-0">@grant.Title</p>
+    </div>
+    <a asp-controller="CollegeDean" asp-action="Index" class="btn btn-outline-secondary">Back</a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+<section class="mb-4">
+    <h2 class="h4">Application Summary</h2>
+    <table class="table table-bordered">
+        <tbody>
+            <tr><th style="width:260px;">Grant title</th><td>@grant.Title</td></tr>
+            <tr><th>Project director</th><td>@Model.ProjectDirectorName</td></tr>
+            <tr><th>Principal investigator</th><td>@Model.PrincipalInvestigatorName</td></tr>
+            <tr><th>Status</th><td>@grant.Status</td></tr>
+            <tr><th>Submitted</th><td>@(grant.SubmittedAt?.ToString("MMM d, yyyy h:mm tt") ?? "Not submitted")</td></tr>
+            <tr><th>College funds requested</th><td>@totalCollege.ToString("C")</td></tr>
+            @if (!string.IsNullOrWhiteSpace(grant.DeptChairApprovalNotes))
+            {
+                <tr><th>Dept. Chair notes</th><td>@grant.DeptChairApprovalNotes</td></tr>
+            }
+        </tbody>
+    </table>
+</section>
+
+<section class="mb-4">
+    <h2 class="h4">Project Information</h2>
+    <dl class="row">
+        <dt class="col-sm-3">Description</dt><dd class="col-sm-9">@grant.Description</dd>
+        <dt class="col-sm-3">Justification</dt><dd class="col-sm-9">@grant.Justification</dd>
+        <dt class="col-sm-3">Timeline</dt><dd class="col-sm-9">@(string.IsNullOrWhiteSpace(grant.Timeline) ? "Not provided" : grant.Timeline)</dd>
+        <dt class="col-sm-3">Students benefited</dt><dd class="col-sm-9">@grant.WeberStateStudentsBenefited</dd>
+        <dt class="col-sm-3">Uses human subjects</dt><dd class="col-sm-9">@(grant.UsesHumanSubjects ? "Yes" : "No")</dd>
+    </dl>
+</section>
+
+<section class="mb-4">
+    <h2 class="h4">Budget</h2>
+    @if (grant.BudgetItems.Any())
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Item</th><th>Qty</th><th>Type</th>
+                    <th>ARCC</th><th>College</th><th>Department</th><th>Other</th><th>Other source</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in grant.BudgetItems)
+                {
+                    <tr>
+                        <td>@item.ItemName</td><td>@item.Quantity</td><td>@item.ItemType</td>
+                        <td>@item.ARCCAmount.ToString("C")</td><td>@item.CollegeAmount.ToString("C")</td>
+                        <td>@item.DepartmentAmount.ToString("C")</td><td>@item.OtherAmount.ToString("C")</td>
+                        <td>@(string.IsNullOrWhiteSpace(item.OtherSource) ? "-" : item.OtherSource)</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="3">Totals</th>
+                    <th>@Model.MoneyRequestedFromArcc.ToString("C")</th>
+                    <th>@totalCollege.ToString("C")</th>
+                    <th>@totalDepartment.ToString("C")</th>
+                    <th>@totalOther.ToString("C")</th>
+                    <th>Grand total: @grandTotal.ToString("C")</th>
+                </tr>
+            </tfoot>
+        </table>
+    }
+    else { <p>No budget items were included.</p> }
+</section>
+
+<section class="mb-4">
+    <h2 class="h4">Files</h2>
+    @if (Model.FileLinks.Any())
+    {
+        <ul class="list-group">
+            @foreach (var file in Model.FileLinks)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>@file.Label</span>
+                    <a href="@Url.Content(file.Url)" class="btn btn-sm btn-outline-primary" download>Download</a>
+                </li>
+            }
+        </ul>
+    }
+    else { <p>No files were uploaded with this application.</p> }
+</section>
+
+<div class="mt-4">
+    <h2 class="h4">Decision</h2>
+    <form asp-controller="CollegeDean" asp-action="ApproveOrReject" asp-route-id="@grant.GrantId" method="post">
+        @Html.AntiForgeryToken()
+        <div class="mb-3">
+            <label for="notes" class="form-label">Notes (optional)</label>
+            <textarea id="notes" name="notes" class="form-control" rows="3"
+                      placeholder="Enter any comments for the applicant...">@grant.DeanApprovalNotes</textarea>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="submit" name="submitAction" value="Approve" class="btn btn-success">Approve</button>
+            <button type="submit" name="submitAction" value="Reject" class="btn btn-danger">Reject</button>
+        </div>
+    </form>
+</div>
