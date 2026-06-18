@@ -1,3 +1,8 @@
+:root {
+    --wsu-purple: #492365;
+    --wsu-gray: #4a494d;
+}
+
 html {
   font-size: 14px;
 }
@@ -8,8 +13,9 @@ html {
   }
 }
 
+/* Focus ring uses WSU purple */
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem var(--wsu-purple);
 }
 
 html {
@@ -19,6 +25,50 @@ html {
 
 body {
   margin-bottom: 60px;
+  color: var(--wsu-gray);
+}
+
+/* Professional text fields */
+.form-control, .form-select {
+    border-color: #b8a0cc;
+    border-radius: 0.375rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--wsu-purple);
+    outline: none;
+}
+
+/* Page headings */
+h1, h2, h3 {
+    color: var(--wsu-purple);
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: var(--wsu-purple);
+    border-color: var(--wsu-purple);
+}
+
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+    background-color: #321748;
+    border-color: #321748;
+}
+
+.btn-outline-primary {
+    color: var(--wsu-purple);
+    border-color: var(--wsu-purple);
+}
+
+.btn-outline-primary:hover, .btn-outline-primary:active {
+    background-color: var(--wsu-purple);
+    border-color: var(--wsu-purple);
+    color: #fff;
+}
+
+/* Footer accent */
+footer.footer {
+    border-top-color: var(--wsu-purple) !important;
 }
 
 .form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {

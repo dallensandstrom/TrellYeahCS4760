@@ -1,12 +1,12 @@
-﻿@model List<TrellYeahCapstone.Models.GrantReviewSummaryViewModel>
+@model List<TrellYeahCapstone.Models.GrantReviewSummaryViewModel>
 
 @{
-    ViewData["Title"] = "Department Chair Review";
-    var pending = Model.Where(g => g.Status == "Submitted").ToList();
-    var processed = Model.Where(g => g.Status != "Submitted").ToList();
+    ViewData["Title"] = "College Dean Review";
+    var pending = Model.Where(g => g.Status == "Approved by Department Chair").ToList();
+    var processed = Model.Where(g => g.Status != "Approved by Department Chair").ToList();
 }
 
-<h1>Department Chair Review</h1>
+<h1>College Dean Review</h1>
 
 @if (TempData["SuccessMessage"] != null)
 {
@@ -16,7 +16,7 @@
 <h2 class="h4 mt-3">Pending Review</h2>
 @if (!pending.Any())
 {
-    <div class="alert alert-info">No submitted grant applications are waiting for review.</div>
+    <div class="alert alert-info">No grant applications are waiting for your college's approval.</div>
 }
 else
 {
@@ -25,8 +25,7 @@ else
             <tr>
                 <th>Grant title</th>
                 <th>Principal investigator</th>
-                <th>College requested</th>
-                <th>Dept requested</th>
+                <th>College funds requested</th>
                 <th>Submitted</th>
                 <th></th>
             </tr>
@@ -38,10 +37,9 @@ else
                     <td>@grant.Title</td>
                     <td>@grant.PrincipalInvestigatorName</td>
                     <td>@grant.MoneyRequestedFromCollege.ToString("C")</td>
-                    <td>@grant.MoneyRequestedFromDepartment.ToString("C")</td>
                     <td>@(grant.SubmittedAt?.ToString("MMM d, yyyy h:mm tt") ?? "Not submitted")</td>
                     <td class="text-end">
-                        <a asp-controller="DepartmentChair" asp-action="Review" asp-route-id="@grant.GrantId"
+                        <a asp-controller="CollegeDean" asp-action="Review" asp-route-id="@grant.GrantId"
                            class="btn btn-sm btn-outline-primary">View Application</a>
                     </td>
                 </tr>
@@ -62,8 +60,7 @@ else
             <tr>
                 <th>Grant title</th>
                 <th>Principal investigator</th>
-                <th>College requested</th>
-                <th>Dept requested</th>
+                <th>College funds requested</th>
                 <th>Submitted</th>
                 <th>Status</th>
             </tr>
@@ -75,7 +72,6 @@ else
                     <td>@grant.Title</td>
                     <td>@grant.PrincipalInvestigatorName</td>
                     <td>@grant.MoneyRequestedFromCollege.ToString("C")</td>
-                    <td>@grant.MoneyRequestedFromDepartment.ToString("C")</td>
                     <td>@(grant.SubmittedAt?.ToString("MMM d, yyyy h:mm tt") ?? "Not submitted")</td>
                     <td>
                         @if (grant.Status.Contains("Approved"))

@@ -155,24 +155,18 @@
     }
 </section>
 
-<div class="d-flex gap-2 mt-4">
-    <form asp-controller="DepartmentChair"
-          asp-action="Approve"
-          asp-route-id="@grant.GrantId"
-          method="post">
+<div class="mt-4">
+    <h2 class="h4">Decision</h2>
+    <form asp-controller="DepartmentChair" asp-action="ApproveOrReject" asp-route-id="@grant.GrantId" method="post">
         @Html.AntiForgeryToken()
-        <button type="submit" class="btn btn-success">
-            Approve
-        </button>
+        <div class="mb-3">
+            <label for="notes" class="form-label">Notes (optional)</label>
+            <textarea id="notes" name="notes" class="form-control" rows="3" placeholder="Enter any comments for the applicant...">@grant.DeptChairApprovalNotes</textarea>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="submit" name="submitAction" value="Approve" class="btn btn-success">Approve</button>
+            <button type="submit" name="submitAction" value="Reject" class="btn btn-danger">Reject</button>
+        </div>
     </form>
-
-    <form asp-controller="DepartmentChair"
-          asp-action="Reject"
-          asp-route-id="@grant.GrantId"
-          method="post">
-        @Html.AntiForgeryToken()
-        <button type="submit" class="btn btn-danger">
-            Reject
-        </button>
-    </form>
+</div>
 </div>

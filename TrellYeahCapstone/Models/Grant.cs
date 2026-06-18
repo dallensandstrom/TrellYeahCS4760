@@ -81,7 +81,20 @@ namespace TrellYeahCS4760.Models
         public string Status { get; set; } = "In Progress";
 
         [NotMapped]
-        public bool IsSubmitted => Status == "Submitted";
+        public bool IsLocked => Status != "In Progress";
+
+        [Display(Name = "Do you have significant matching funds available?")]
+        public bool HasMatchingFunds { get; set; }
+
+        [Display(Name = "Total non-ARCC funds available")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? MatchingFundsAmount { get; set; }
+
+        [StringLength(1000)]
+        public string? DeptChairApprovalNotes { get; set; }
+
+        [StringLength(1000)]
+        public string? DeanApprovalNotes { get; set; }
 
         public List<BudgetItem> BudgetItems { get; set; } = new();
     }

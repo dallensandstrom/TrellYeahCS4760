@@ -99,6 +99,23 @@
         </div>
     </div>
 
+    <div class="row align-items-start mb-3">
+        <div class="col-auto pt-1">
+            <div class="form-check">
+                <input asp-for="HasMatchingFunds" class="form-check-input" id="hasMatchingFundsCheck" />
+                <label asp-for="HasMatchingFunds" class="form-check-label"></label>
+            </div>
+        </div>
+        <div class="col" id="matchingFundsSection" style="display: none;">
+            <label asp-for="MatchingFundsAmount" class="form-label mb-1"></label>
+            <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input asp-for="MatchingFundsAmount" class="form-control" type="number" min="0" step="0.01" />
+            </div>
+            <span asp-validation-for="MatchingFundsAmount" class="text-danger"></span>
+        </div>
+    </div>
+
     <div class="mb-3">
         <label class="form-label">Supporting Documents (Optional - up to 3 files)</label>
         <div class="mb-2">
@@ -181,6 +198,16 @@
 
         toggleDepartmentCount();
         toggleIRBApprovalField();
+
+        const hasMatchingFundsCheck = document.getElementById('hasMatchingFundsCheck');
+        const matchingFundsSection = document.getElementById('matchingFundsSection');
+
+        function toggleMatchingFunds() {
+            matchingFundsSection.style.display = hasMatchingFundsCheck.checked ? 'block' : 'none';
+        }
+
+        hasMatchingFundsCheck.addEventListener('change', toggleMatchingFunds);
+        toggleMatchingFunds();
 
         const projectDirectorSelect = document.getElementById('projectDirectorSelect');
         const collegeSpan = document.getElementById('projectDirectorCollege');

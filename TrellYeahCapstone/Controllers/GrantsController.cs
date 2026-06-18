@@ -261,9 +261,9 @@ namespace TrellYeahCapstone.Controllers
                 return NotFound();
             }
 
-            if (grant.Status == "Submitted")
+            if (grant.Status != "In Progress")
             {
-                TempData["ErrorMessage"] = "Submitted grant applications are locked and cannot be edited.";
+                TempData["ErrorMessage"] = "This grant application is locked and cannot be edited.";
                 return RedirectToAction("Details", new { id = grant.GrantId });
             }
 
@@ -291,9 +291,9 @@ namespace TrellYeahCapstone.Controllers
                 return NotFound();
             }
 
-            if (existingGrant.Status == "Submitted")
+            if (existingGrant.Status != "In Progress")
             {
-                TempData["ErrorMessage"] = "Submitted grant applications are locked and cannot be edited.";
+                TempData["ErrorMessage"] = "This grant application is locked and cannot be edited.";
                 return RedirectToAction("Details", new { id = existingGrant.GrantId });
             }
 
@@ -355,6 +355,8 @@ namespace TrellYeahCapstone.Controllers
             existingGrant.BenefitsMultipleDepartments = grant.BenefitsMultipleDepartments;
             existingGrant.NumberOfDepartmentsBenefited = grant.NumberOfDepartmentsBenefited;
             existingGrant.UsesHumanSubjects = grant.UsesHumanSubjects;
+            existingGrant.HasMatchingFunds = grant.HasMatchingFunds;
+            existingGrant.MatchingFundsAmount = grant.HasMatchingFunds ? grant.MatchingFundsAmount : null;
 
             existingGrant.Status = isSubmitting ? "Submitted" : "In Progress";
             existingGrant.SubmittedAt = isSubmitting ? DateTime.Now : null;
