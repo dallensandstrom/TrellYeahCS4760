@@ -15,5 +15,21 @@ namespace TrellYeahCapstone.Data
         public DbSet<RubricCriterion> RubricCriteria { get; set; }
         public DbSet<RubricRatingSuggestion> RubricRatingSuggestions { get; set; }
         public DbSet<GrantAllocation> GrantAllocations { get; set; }
+        public DbSet<GrantRubricScore> GrantRubricScores { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            builder.Entity<GrantRubricScore>()
+                .HasIndex(score => new { score.GrantId, score.RubricCriterionId, score.ReviewerUserId })
+                .IsUnique();
+
+            builder.Entity<GrantRubricScore>()
+                .HasOne(score => score.Reviewer)
+                .WithMany()
+                .HasForeignKey(score => score.ReviewerUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        }
     }
 }
