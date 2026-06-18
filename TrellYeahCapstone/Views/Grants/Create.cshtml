@@ -27,10 +27,16 @@
 
     <div class="mb-3">
         <label asp-for="PrincipalInvestigatorUserId" class="form-label"></label>
+
         <select asp-for="PrincipalInvestigatorUserId"
                 asp-items="Model.UserOptions"
-                class="form-select">
+                class="form-select"
+                disabled>
         </select>
+
+        <input type="hidden"
+               asp-for="PrincipalInvestigatorUserId" />
+
         <span asp-validation-for="PrincipalInvestigatorUserId" class="text-danger"></span>
     </div>
 

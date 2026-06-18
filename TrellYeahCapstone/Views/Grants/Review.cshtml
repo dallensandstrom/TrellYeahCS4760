@@ -63,6 +63,29 @@
             </table>
         </section>
 
+        @if (!string.IsNullOrWhiteSpace(grant.DeptChairApprovalNotes) || !string.IsNullOrWhiteSpace(grant.DeanApprovalNotes))
+        {
+            <section class="mb-4">
+                <h2 class="h4">Approval / Rejection Notes</h2>
+
+                @if (!string.IsNullOrWhiteSpace(grant.DeptChairApprovalNotes))
+                {
+                    <div class="alert alert-secondary">
+                        <strong>Department Chair Notes:</strong><br />
+                        @grant.DeptChairApprovalNotes
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(grant.DeanApprovalNotes))
+                {
+                    <div class="alert alert-secondary">
+                        <strong>College Dean Notes:</strong><br />
+                        @grant.DeanApprovalNotes
+                    </div>
+                }
+            </section>
+        }
+
         <section class="mb-4">
             <h2 class="h4">Project Information</h2>
             <dl class="row">

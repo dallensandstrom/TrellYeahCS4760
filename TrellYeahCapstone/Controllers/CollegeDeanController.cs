@@ -40,7 +40,7 @@ namespace TrellYeahCapstone.Controllers
                 .Where(g =>
                     deanStatuses.Contains(g.Status) &&
                     g.BudgetItems.Any(b => b.CollegeAmount > 0) &&
-                    _context.Users.Any(u => u.Id == g.UserId && u.CollegeId == deanCollegeId))
+                    _context.Users.Any(u => u.Id == g.ProjectDirectorUserId && u.CollegeId == deanCollegeId))
                 .OrderByDescending(g => g.SubmittedAt)
                 .ToListAsync();
 
@@ -126,7 +126,7 @@ namespace TrellYeahCapstone.Controllers
                     g.GrantId == grantId &&
                     g.Status == "Approved by Department Chair" &&
                     g.BudgetItems.Any(b => b.CollegeAmount > 0) &&
-                    _context.Users.Any(u => u.Id == g.UserId && u.CollegeId == deanCollegeId));
+                    _context.Users.Any(u => u.Id == g.ProjectDirectorUserId && u.CollegeId == deanCollegeId));
         }
 
         private static string GetUserDisplayName(ApplicationUser user)

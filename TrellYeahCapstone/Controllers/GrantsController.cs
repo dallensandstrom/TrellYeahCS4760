@@ -48,6 +48,11 @@ namespace TrellYeahCapstone.Controllers
         {
             var isSubmitting = submitAction == "Submit";
 
+            var currentUserId = _userManager.GetUserId(User) ?? string.Empty;
+
+            grant.PrincipalInvestigatorUserId = currentUserId;
+            ModelState.Remove(nameof(grant.PrincipalInvestigatorUserId));
+
             if (!isSubmitting)
             {
                 ModelState.Remove(nameof(grant.Title));
@@ -55,8 +60,6 @@ namespace TrellYeahCapstone.Controllers
                 ModelState.Remove(nameof(grant.Justification));
                 ModelState.Remove(nameof(grant.ProjectDirectorUserId));
                 ModelState.Remove(nameof(grant.PrincipalInvestigatorUserId));
-
-                var currentUserId = _userManager.GetUserId(User) ?? string.Empty;
 
                 grant.Title = string.IsNullOrWhiteSpace(grant.Title)
                     ? "Untitled Grant Application"
@@ -69,9 +72,7 @@ namespace TrellYeahCapstone.Controllers
                     ? currentUserId
                     : grant.ProjectDirectorUserId;
 
-                grant.PrincipalInvestigatorUserId = string.IsNullOrWhiteSpace(grant.PrincipalInvestigatorUserId)
-                    ? currentUserId
-                    : grant.PrincipalInvestigatorUserId;
+                grant.PrincipalInvestigatorUserId = currentUserId;
             }
 
             if (isSubmitting && grant.BenefitsMultipleDepartments && grant.NumberOfDepartmentsBenefited == null)
@@ -396,7 +397,11 @@ namespace TrellYeahCapstone.Controllers
 
             var grant = await _context.Grants
                 .Include(g => g.BudgetItems)
-                .FirstOrDefaultAsync(g => g.GrantId == id && g.Status == "Submitted");
+                .FirstOrDefaultAsync(g =>
+                    g.GrantId == id &&
+                    (g.Status == "Submitted" ||
+                     g.Status == "Approved by Department Chair" ||
+                     g.Status == "Approved by Dean"));
 
             if (grant == null)
             {
@@ -431,7 +436,11 @@ namespace TrellYeahCapstone.Controllers
             }
 
             var grantExists = await _context.Grants
-                .AnyAsync(g => g.GrantId == id && g.Status == "Submitted");
+                .AnyAsync(g =>
+                g.GrantId == id &&
+                (g.Status == "Submitted" ||
+                 g.Status == "Approved by Department Chair" ||
+                 g.Status == "Approved by Dean"));
 
             if (!grantExists)
             {
