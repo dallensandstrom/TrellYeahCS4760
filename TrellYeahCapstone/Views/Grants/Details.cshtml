@@ -15,6 +15,21 @@
         <p><strong>Justification:</strong> @Model.Justification</p>
         <p><strong>Timeline:</strong> @Model.Timeline</p>
         <p><strong>Submitted:</strong> @(Model.SubmittedAt?.ToString("MMM d, yyyy h:mm tt") ?? "Not submitted")</p>
+		@if (!string.IsNullOrWhiteSpace(Model.DeptChairApprovalNotes))
+		{
+			<p>
+				<strong>Department Chair Notes:</strong>
+				@Model.DeptChairApprovalNotes
+			</p>
+		}
+
+		@if (!string.IsNullOrWhiteSpace(Model.DeanApprovalNotes))
+		{
+			<p>
+				<strong>College Dean Notes:</strong>
+				@Model.DeanApprovalNotes
+			</p>
+		}
     </div>
 </div>
 
@@ -28,3 +43,4 @@
         Continue Editing
     </a>
 }
+

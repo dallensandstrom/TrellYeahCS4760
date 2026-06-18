@@ -47,7 +47,10 @@ namespace TrellYeahCS4760.Controllers
         {
             var submittedGrants = await _context.Grants
                 .Include(g => g.BudgetItems)
-                .Where(g => g.Status == "Submitted")
+                .Where(g =>
+                    g.Status == "Submitted" ||
+                    g.Status == "Approved by Department Chair" ||
+                    g.Status == "Approved by Dean")
                 .OrderByDescending(g => g.SubmittedAt ?? DateTime.MinValue)
                 .ThenByDescending(g => g.GrantId)
                 .ToListAsync();
@@ -71,7 +74,8 @@ namespace TrellYeahCS4760.Controllers
                         g.PrincipalInvestigatorUserId,
                         "Unknown user"),
                     MoneyRequestedFromArcc = g.BudgetItems.Sum(item => item.ARCCAmount),
-                    SubmittedAt = g.SubmittedAt
+                    SubmittedAt = g.SubmittedAt,
+                    Status = g.Status
                 })
                 .ToList();
         }

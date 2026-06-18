@@ -52,7 +52,7 @@ namespace TrellYeahCapstone.Controllers
                 .Where(g =>
                     statusesToShow.Contains(g.Status) &&
                     _context.Users.Any(u =>
-                        u.Id == g.UserId &&
+                        u.Id == g.ProjectDirectorUserId &&
                         u.DepartmentId == chairDepartmentId))
                 .OrderByDescending(g => g.SubmittedAt)
                 .ToListAsync();
@@ -164,7 +164,7 @@ namespace TrellYeahCapstone.Controllers
                     g.GrantId == grantId &&
                     g.Status == "Submitted" &&
                     _context.Users.Any(u =>
-                        u.Id == g.UserId &&
+                        u.Id == g.ProjectDirectorUserId &&
                         u.DepartmentId == chairDepartmentId));
         }
 
