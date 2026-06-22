@@ -14,6 +14,11 @@
         <p><strong>Description:</strong> @Model.Description</p>
         <p><strong>Justification:</strong> @Model.Justification</p>
         <p><strong>Timeline:</strong> @Model.Timeline</p>
+		<p><strong>Agreement One:</strong> @(Model.AgreementOne ? "Yes" : "No")</p>
+		<p><strong>Agreement Two:</strong> @(Model.AgreementTwo ? "Yes" : "No")</p>
+		<p><strong>Agreement Three:</strong> @(Model.AgreementThree ? "Yes" : "No")</p>
+		<p><strong>Agreement Four:</strong> @(Model.AgreementFour ? "Yes" : "No")</p>
+		<p><strong>Application Signature:</strong> @Model.ApplicationSignature</p>
         <p><strong>Submitted:</strong> @(Model.SubmittedAt?.ToString("MMM d, yyyy h:mm tt") ?? "Not submitted")</p>
 		@if (!string.IsNullOrWhiteSpace(Model.DeptChairApprovalNotes))
 		{

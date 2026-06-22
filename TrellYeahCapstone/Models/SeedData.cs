@@ -326,6 +326,11 @@ namespace TrellYeahCapstone.Models
             grant.IRBApprovalFilePath = null;
             grant.Status = "Submitted";
             grant.SubmittedAt ??= new DateTime(2026, 6, 9, 12, 0, 0);
+            grant.AgreementOne = true;
+            grant.AgreementTwo = true;
+            grant.AgreementThree = true;
+            grant.AgreementFour = true;
+            grant.ApplicationSignature = $"{grantOwner.FirstName} {grantOwner.LastName}";
 
             await db.SaveChangesAsync();
 

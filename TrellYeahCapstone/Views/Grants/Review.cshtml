@@ -113,6 +113,27 @@
         </section>
 
         <section class="mb-4">
+            <h2 class="h4">Applicant Agreements</h2>
+
+            <dl class="row">
+                <dt class="col-sm-4">Agreement One</dt>
+                <dd class="col-sm-8">@(grant.AgreementOne ? "Agreed" : "Not Agreed")</dd>
+
+                <dt class="col-sm-4">Agreement Two</dt>
+                <dd class="col-sm-8">@(grant.AgreementTwo ? "Agreed" : "Not Agreed")</dd>
+
+                <dt class="col-sm-4">Agreement Three</dt>
+                <dd class="col-sm-8">@(grant.AgreementThree ? "Agreed" : "Not Agreed")</dd>
+
+                <dt class="col-sm-4">Agreement Four</dt>
+                <dd class="col-sm-8">@(grant.AgreementFour ? "Agreed" : "Not Agreed")</dd>
+
+                <dt class="col-sm-4">Electronic Signature</dt>
+                <dd class="col-sm-8">@grant.ApplicationSignature</dd>
+            </dl>
+        </section>
+
+        <section class="mb-4">
             <h2 class="h4">Budget</h2>
             @if (grant.BudgetItems.Any())
             {
@@ -186,6 +207,8 @@
             }
         </section>
     </div>
+
+
 
     <div class="col-lg-5">
         <section class="position-sticky" style="top: 1rem;">

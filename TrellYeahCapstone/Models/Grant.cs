@@ -90,6 +90,29 @@ namespace TrellYeahCS4760.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal? MatchingFundsAmount { get; set; }
 
+        //DS - Agreement Checkboxes and Signature
+        [Range(typeof(bool), "true", "true",
+            ErrorMessage = "Agreement Required.")]
+        [Display(Name = "Agreement One")]
+        public bool AgreementOne { get; set; }
+        [Range(typeof(bool), "true", "true",
+            ErrorMessage = "Agreement Required.")]
+        [Display(Name = "Agreement Two")]
+        public bool AgreementTwo { get; set; }
+        [Range(typeof(bool), "true", "true",
+            ErrorMessage = "Agreement Required.")]
+        [Display(Name = "Agreement Three")]
+        public bool AgreementThree { get; set; }
+        [Range(typeof(bool), "true", "true",
+            ErrorMessage = "Agreement Required.")]
+        [Display(Name = "Agreement Four")]
+        public bool AgreementFour { get; set; }
+        [Required]
+        [Display(Name = "Write your Full Signature")]
+        [StringLength(500)]
+        public string? ApplicationSignature { get; set; }
+
+
         [StringLength(1000)]
         public string? DeptChairApprovalNotes { get; set; }
 
