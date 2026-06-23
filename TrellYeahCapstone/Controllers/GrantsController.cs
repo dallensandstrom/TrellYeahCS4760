@@ -97,6 +97,21 @@ namespace TrellYeahCapstone.Controllers
                 ModelState.AddModelError(error.Key, error.Value);
             }
 
+            if (isSubmitting) //Dallen - Make agreement checkboxes properly required
+            {
+                if (!grant.AgreementOne)
+                    ModelState.AddModelError(nameof(grant.AgreementOne), "Agreement Required.");
+
+                if (!grant.AgreementTwo)
+                    ModelState.AddModelError(nameof(grant.AgreementTwo), "Agreement Required.");
+
+                if (!grant.AgreementThree)
+                    ModelState.AddModelError(nameof(grant.AgreementThree), "Agreement Required.");
+
+                if (!grant.AgreementFour)
+                    ModelState.AddModelError(nameof(grant.AgreementFour), "Agreement Required.");
+            }
+
             if (!ModelState.IsValid)
             {
                 grant.UserOptions = await GetUserOptionsAsync();
@@ -358,6 +373,11 @@ namespace TrellYeahCapstone.Controllers
             existingGrant.UsesHumanSubjects = grant.UsesHumanSubjects;
             existingGrant.HasMatchingFunds = grant.HasMatchingFunds;
             existingGrant.MatchingFundsAmount = grant.HasMatchingFunds ? grant.MatchingFundsAmount : null;
+            existingGrant.AgreementOne = grant.AgreementOne;
+            existingGrant.AgreementTwo = grant.AgreementTwo;
+            existingGrant.AgreementThree = grant.AgreementThree;
+            existingGrant.AgreementFour = grant.AgreementFour;
+            existingGrant.ApplicationSignature = grant.ApplicationSignature;
 
             existingGrant.Status = isSubmitting ? "Submitted" : "In Progress";
             existingGrant.SubmittedAt = isSubmitting ? DateTime.Now : null;
