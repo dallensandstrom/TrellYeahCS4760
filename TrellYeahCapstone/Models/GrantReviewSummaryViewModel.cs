@@ -15,5 +15,7 @@ namespace TrellYeahCapstone.Models
         public DateTime? SubmittedAt { get; set; }
 
         public string Status { get; set; } = string.Empty;
+
+        public bool HasSavedReview { get; set; }
     }
 }
