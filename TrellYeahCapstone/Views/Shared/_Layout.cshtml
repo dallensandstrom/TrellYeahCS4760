@@ -11,7 +11,7 @@
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark wsu-navbar mb-3">
             <div class="container-fluid">
                 <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">TrellYeahCapstone</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
@@ -23,31 +23,31 @@
                         @if (User.IsInRole("Admin"))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Admin" asp-action="Index">Admin</a>
+                                <a class="nav-link" asp-area="" asp-controller="Admin" asp-action="Index">Admin</a>
                             </li>
                         }
                         @if (User.IsInRole("Admin") || User.IsInRole("ARCCchair"))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Rubric" asp-action="Index">Rubric</a>
+                                <a class="nav-link" asp-area="" asp-controller="Rubric" asp-action="Index">Rubric</a>
                             </li>
                         }
                         @if (User.IsInRole("ARCCmember") || User.IsInRole("ARCCchair"))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="UserDashboard" asp-action="Review">Review</a>
+                                <a class="nav-link" asp-controller="UserDashboard" asp-action="Review">Review</a>
                             </li>
                         }
                         @if (User.IsInRole("ARCCchair"))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="UserDashboard" asp-action="Allocation">Allocation</a>
+                                <a class="nav-link" asp-controller="UserDashboard" asp-action="Allocation">Allocation</a>
                             </li>
                         }
                         @if (User.IsInRole("DeptChair"))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark"
+                                <a class="nav-link"
                                    asp-controller="DepartmentChair"
                                    asp-action="Index">
                                     Department Review
@@ -57,7 +57,7 @@
                         @if (User.IsInRole("CollegeDean"))
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark"
+                                <a class="nav-link"
                                    asp-controller="CollegeDean"
                                    asp-action="Index">
                                     College Dean Review
@@ -69,7 +69,7 @@
                              !User.IsInRole("Admin"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="UserDashboard" asp-action="Index">Dashboard</a>
+                                    <a class="nav-link" asp-controller="UserDashboard" asp-action="Index">Dashboard</a>
                                 </li>
                             }
                         </ul>
@@ -78,7 +78,7 @@
             </div>
         </nav>
     </header>
-    <div class="container">
+    <div class="container content-wrapper">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
