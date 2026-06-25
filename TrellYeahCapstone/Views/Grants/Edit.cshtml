@@ -60,6 +60,12 @@
     </div>
 
     <div class="mb-3">
+        <label asp-for="AccountNumber" class="form-label"></label>
+        <input asp-for="AccountNumber" class="form-control" />
+        <span asp-validation-for="AccountNumber" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
         <label asp-for="Timeline" class="form-label"></label>
         <textarea asp-for="Timeline" class="form-control" rows="4"></textarea>
         <span asp-validation-for="Timeline" class="text-danger"></span>

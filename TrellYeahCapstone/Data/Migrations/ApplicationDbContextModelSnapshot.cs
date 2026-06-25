@@ -213,6 +213,11 @@ namespace TrellYeahCapstone.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("GrantId"));
 
+                    b.Property<string>("AccountNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<bool>("AgreementFour")
                         .HasColumnType("bit");
 
@@ -229,6 +234,10 @@ namespace TrellYeahCapstone.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ArccChairApprovalNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<bool>("BenefitsMultipleDepartments")
                         .HasColumnType("bit");

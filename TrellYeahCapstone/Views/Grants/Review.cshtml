@@ -94,6 +94,8 @@
 
                 <dt class="col-sm-4">Justification</dt>
                 <dd class="col-sm-8">@grant.Justification</dd>
+                <dt class="col-sm-4">Account Number</dt>
+                <dd class="col-sm-8">@grant.AccountNumber</dd>
 
                 <dt class="col-sm-4">Timeline</dt>
                 <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(grant.Timeline) ? "Not provided" : grant.Timeline)</dd>
@@ -262,6 +264,16 @@
                             <span>@Model.ScorePercentage.ToString("0.##")%</span>
                         </div>
                     </div>
+                    @if (User.IsInRole("ARCCchair"))
+                    {
+                        <div class="mb-3">
+                            <label for="arccChairApprovalNotes" class="form-label">ARCC Chair Notes (Optional)</label>
+                            <textarea id="arccChairApprovalNotes"
+                                      name="arccChairApprovalNotes"
+                                      class="form-control"
+                                      rows="3">@grant.ArccChairApprovalNotes</textarea>
+                        </div>
+                    }
 
                     <button type="submit" class="btn btn-primary w-100 mt-3">Save Rating</button>
                 </form>
