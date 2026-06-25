@@ -11,6 +11,106 @@
     <div class="alert alert-success">@TempData["SuccessMessage"]</div>
 }
 
+<section class="mb-5">
+    <h2 class="h4">Submitted Grant Applications</h2>
+    @if (!Model.SubmittedGrants.Any())
+    {
+        <div class="alert alert-info">No submitted applications are ready for allocation.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Principal investigator</th>
+                        <th>Requested from ARCC</th>
+                        <th>Requested from other sources</th>
+                        <th>Average score</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var grant in Model.SubmittedGrants)
+                    {
+                        <tr>
+                            <td>@grant.Title</td>
+                            <td>@grant.PrincipalInvestigatorName</td>
+                            <td>@grant.MoneyRequestedFromArcc.ToString("C")</td>
+                            <td>@grant.MoneyRequestedFromOtherSources.ToString("C")</td>
+                            <td>
+                                @if (grant.AverageScorePercentage.HasValue)
+                                {
+                                    <span>@grant.AverageScorePercentage.Value.ToString("0.##")%</span>
+                                    <span class="text-muted">(@grant.ReviewerCount reviewer@(grant.ReviewerCount == 1 ? "" : "s"))</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Not reviewed</span>
+                                }
+                            </td>
+                            <td>@grant.Status</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+<section class="mb-5">
+    <h2 class="h4">Rejected Applications</h2>
+    @if (!Model.RejectedGrants.Any())
+    {
+        <div class="alert alert-info">No applications have been rejected by the ARCC cutoff.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Principal investigator</th>
+                        <th>Requested from ARCC</th>
+                        <th>Requested from other sources</th>
+                        <th>Average score</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var grant in Model.RejectedGrants)
+                    {
+                        <tr>
+                            <td>@grant.Title</td>
+                            <td>@grant.PrincipalInvestigatorName</td>
+                            <td>@grant.MoneyRequestedFromArcc.ToString("C")</td>
+                            <td>@grant.MoneyRequestedFromOtherSources.ToString("C")</td>
+                            <td>
+                                @if (grant.AverageScorePercentage.HasValue)
+                                {
+                                    <span>@grant.AverageScorePercentage.Value.ToString("0.##")%</span>
+                                    <span class="text-muted">(@grant.ReviewerCount reviewer@(grant.ReviewerCount == 1 ? "" : "s"))</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Not reviewed</span>
+                                }
+                            </td>
+                            <td>@grant.Status</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+<section>
+    <h2 class="h4">Grant Allocation Cutoff Percentage</h2>
+    <p class="text-muted">The cutoff only rejects applications that already have at least one ARCC rubric review.</p>
+
 <div class="row">
     <div class="col-md-6">
         <form asp-action="Allocation" method="post">
@@ -43,10 +143,11 @@
                 <span asp-validation-for="CutoutPercentage" class="text-danger"></span>
             </div>
 
-            <button type="submit" class="btn btn-primary">Submit</button>
+            <button type="submit" class="btn btn-primary">Apply cutoff percentage</button>
         </form>
     </div>
 </div>
+</section>
 
 <section class="mt-5">
     <h2 class="h4">Past Submitted Allocations</h2>

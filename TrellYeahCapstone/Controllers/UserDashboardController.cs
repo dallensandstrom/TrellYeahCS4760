@@ -12,6 +12,16 @@ namespace TrellYeahCS4760.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private static readonly string[] ArccReviewStatuses =
+        [
+            "Submitted",
+            "Approved by Department Chair",
+            "Approved by Dean"
+        ];
+        private static readonly string[] ArccRejectedStatuses =
+        [
+            "Rejected by ARCC"
+        ];
 
         public UserDashboardController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
@@ -45,12 +55,10 @@ namespace TrellYeahCS4760.Controllers
 
         private async Task<List<GrantReviewSummaryViewModel>> BuildSubmittedGrantReviewListAsync()
         {
+            var currentUserId = _userManager.GetUserId(User) ?? string.Empty;
             var submittedGrants = await _context.Grants
                 .Include(g => g.BudgetItems)
-                .Where(g =>
-                    g.Status == "Submitted" ||
-                    g.Status == "Approved by Department Chair" ||
-                    g.Status == "Approved by Dean")
+                .Where(g => ArccReviewStatuses.Contains(g.Status))
                 .OrderByDescending(g => g.SubmittedAt ?? DateTime.MinValue)
                 .ThenByDescending(g => g.GrantId)
                 .ToListAsync();
@@ -65,6 +73,18 @@ namespace TrellYeahCS4760.Controllers
                 .Where(user => userIds.Contains(user.Id))
                 .ToDictionaryAsync(user => user.Id, user => GetUserDisplayName(user));
 
+            var submittedGrantIds = submittedGrants
+                .Select(g => g.GrantId)
+                .ToList();
+
+            var grantIdsReviewedByCurrentUser = await _context.GrantRubricScores
+                .Where(score =>
+                    score.ReviewerUserId == currentUserId &&
+                    submittedGrantIds.Contains(score.GrantId))
+                .Select(score => score.GrantId)
+                .Distinct()
+                .ToListAsync();
+
             return submittedGrants
                 .Select(g => new GrantReviewSummaryViewModel
                 {
@@ -75,7 +95,8 @@ namespace TrellYeahCS4760.Controllers
                         "Unknown user"),
                     MoneyRequestedFromArcc = g.BudgetItems.Sum(item => item.ARCCAmount),
                     SubmittedAt = g.SubmittedAt,
-                    Status = g.Status
+                    Status = g.Status,
+                    HasSavedReview = grantIdsReviewedByCurrentUser.Contains(g.GrantId)
                 })
                 .ToList();
         }
@@ -92,13 +113,7 @@ namespace TrellYeahCS4760.Controllers
         [Authorize(Roles = "ARCCchair")]
         public async Task<IActionResult> Allocation()
         {
-            var model = new AllocationViewModel
-            {
-                PastAllocations = await _context.GrantAllocations
-                    .OrderByDescending(a => a.CreatedAt)
-                    .ToListAsync()
-            };
-            return View(model);
+            return View(await BuildAllocationViewModelAsync());
         }
 
         [HttpPost]
@@ -108,7 +123,11 @@ namespace TrellYeahCS4760.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return View(model);
+                var invalidModel = await BuildAllocationViewModelAsync();
+                invalidModel.CurrentRoundAmount = model.CurrentRoundAmount;
+                invalidModel.PreviousRoundAmount = model.PreviousRoundAmount;
+                invalidModel.CutoutPercentage = model.CutoutPercentage;
+                return View(invalidModel);
             }
 
             _context.GrantAllocations.Add(new GrantAllocation
@@ -119,10 +138,138 @@ namespace TrellYeahCS4760.Controllers
                 CreatedAt = DateTime.Now
             });
 
+            var rejectedCount = await ApplyCutoffPercentageAsync(model.CutoutPercentage);
+
             await _context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = "Allocation submitted successfully!";
+            TempData["SuccessMessage"] = $"Cutoff applied. {rejectedCount} reviewed grant application(s) were rejected.";
             return RedirectToAction(nameof(Allocation));
+        }
+
+        private async Task<AllocationViewModel> BuildAllocationViewModelAsync()
+        {
+            return new AllocationViewModel
+            {
+                PastAllocations = await _context.GrantAllocations
+                    .OrderByDescending(a => a.CreatedAt)
+                    .ToListAsync(),
+                SubmittedGrants = await BuildGrantAllocationSummariesAsync(ArccReviewStatuses),
+                RejectedGrants = await BuildGrantAllocationSummariesAsync(ArccRejectedStatuses)
+            };
+        }
+
+        private async Task<List<AllocationGrantSummaryViewModel>> BuildGrantAllocationSummariesAsync(string[] statuses)
+        {
+            var submittedGrants = await _context.Grants
+                .Include(g => g.BudgetItems)
+                .Where(g => statuses.Contains(g.Status))
+                .OrderByDescending(g => g.SubmittedAt ?? DateTime.MinValue)
+                .ThenByDescending(g => g.GrantId)
+                .ToListAsync();
+
+            var grantIds = submittedGrants
+                .Select(g => g.GrantId)
+                .ToList();
+
+            var piIds = submittedGrants
+                .Select(g => g.PrincipalInvestigatorUserId)
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Distinct()
+                .ToList();
+
+            var piNames = await _context.Users
+                .Where(user => piIds.Contains(user.Id))
+                .ToDictionaryAsync(user => user.Id, user => GetUserDisplayName(user));
+
+            var averageScores = await BuildAverageScoreLookupAsync(grantIds);
+
+            return submittedGrants
+                .Select(g =>
+                {
+                    averageScores.TryGetValue(g.GrantId, out var score);
+
+                    return new AllocationGrantSummaryViewModel
+                    {
+                        GrantId = g.GrantId,
+                        Title = g.Title,
+                        PrincipalInvestigatorName = piNames.GetValueOrDefault(
+                            g.PrincipalInvestigatorUserId,
+                            "Unknown user"),
+                        MoneyRequestedFromArcc = g.BudgetItems.Sum(item => item.ARCCAmount),
+                        MoneyRequestedFromOtherSources = g.BudgetItems.Sum(item =>
+                            item.CollegeAmount + item.DepartmentAmount + item.OtherAmount),
+                        AverageScorePercentage = score.AveragePercentage,
+                        ReviewerCount = score.ReviewerCount,
+                        Status = g.Status
+                    };
+                })
+                .ToList();
+        }
+
+        private async Task<Dictionary<int, (decimal? AveragePercentage, int ReviewerCount)>> BuildAverageScoreLookupAsync(List<int> grantIds)
+        {
+            var averages = new Dictionary<int, (decimal? AveragePercentage, int ReviewerCount)>();
+            if (!grantIds.Any())
+            {
+                return averages;
+            }
+
+            var possibleScoreTotal = await _context.RubricCriteria
+                .SumAsync(criterion => (int?)criterion.MaximumScore) ?? 0;
+
+            if (possibleScoreTotal == 0)
+            {
+                return averages;
+            }
+
+            var rubricScores = await _context.GrantRubricScores
+                .Where(score => grantIds.Contains(score.GrantId))
+                .ToListAsync();
+
+            foreach (var grantScoreGroup in rubricScores.GroupBy(score => score.GrantId))
+            {
+                var reviewerPercentages = grantScoreGroup
+                    .GroupBy(score => score.ReviewerUserId)
+                    .Select(reviewerScores =>
+                        reviewerScores.Sum(score => score.Score) / (decimal)possibleScoreTotal * 100)
+                    .ToList();
+
+                if (reviewerPercentages.Any())
+                {
+                    averages[grantScoreGroup.Key] = (
+                        Math.Round(reviewerPercentages.Average(), 2),
+                        reviewerPercentages.Count);
+                }
+            }
+
+            return averages;
+        }
+
+        private async Task<int> ApplyCutoffPercentageAsync(decimal cutoffPercentage)
+        {
+            var grantSummaries = await BuildGrantAllocationSummariesAsync(ArccReviewStatuses);
+            var rejectedGrantIds = grantSummaries
+                .Where(grant =>
+                    grant.AverageScorePercentage.HasValue &&
+                    grant.AverageScorePercentage.Value < cutoffPercentage)
+                .Select(grant => grant.GrantId)
+                .ToList();
+
+            if (!rejectedGrantIds.Any())
+            {
+                return 0;
+            }
+
+            var grantsToReject = await _context.Grants
+                .Where(grant => rejectedGrantIds.Contains(grant.GrantId))
+                .ToListAsync();
+
+            foreach (var grant in grantsToReject)
+            {
+                grant.Status = "Rejected by ARCC";
+            }
+
+            return grantsToReject.Count;
         }
     }
 }

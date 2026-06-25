@@ -21,6 +21,7 @@ else
                 <th>Principal investigator</th>
                 <th>Money requested from ARCC</th>
                 <th>Submitted</th>
+                <th>Review status</th>
                 <th></th>
             </tr>
         </thead>
@@ -36,9 +37,19 @@ else
                             ? grant.SubmittedAt.Value.ToString("MMM d, yyyy h:mm tt")
                             : "Not submitted")
                     </td>
+                    <td>
+                        @if (grant.HasSavedReview)
+                        {
+                            <span class="badge text-bg-success">Reviewed</span>
+                        }
+                        else
+                        {
+                            <span class="badge text-bg-secondary">Not reviewed</span>
+                        }
+                    </td>
                     <td class="text-end">
                         <a asp-controller="Grants" asp-action="Review" asp-route-id="@grant.GrantId" class="btn btn-sm btn-outline-primary">
-                            Review
+                            @(grant.HasSavedReview ? "Edit review" : "Review")
                         </a>
                     </td>
                 </tr>
