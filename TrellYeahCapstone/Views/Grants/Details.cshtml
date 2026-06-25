@@ -13,6 +13,7 @@
         <p><strong>Status:</strong> @Model.Status</p>
         <p><strong>Description:</strong> @Model.Description</p>
         <p><strong>Justification:</strong> @Model.Justification</p>
+		<p><strong>Account Number:</strong> @Model.AccountNumber</p>
         <p><strong>Timeline:</strong> @Model.Timeline</p>
 		<p><strong>Agreement One:</strong> @(Model.AgreementOne ? "Yes" : "No")</p>
 		<p><strong>Agreement Two:</strong> @(Model.AgreementTwo ? "Yes" : "No")</p>
@@ -33,6 +34,13 @@
 			<p>
 				<strong>College Dean Notes:</strong>
 				@Model.DeanApprovalNotes
+			</p>
+		}
+		@if (!string.IsNullOrWhiteSpace(Model.ArccChairApprovalNotes))
+		{
+			<p>
+				<strong>ARCC Chair Notes:</strong>
+				@Model.ArccChairApprovalNotes
 			</p>
 		}
     </div>

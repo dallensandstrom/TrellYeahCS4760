@@ -58,6 +58,7 @@ namespace TrellYeahCapstone.Controllers
                 ModelState.Remove(nameof(grant.Title));
                 ModelState.Remove(nameof(grant.Description));
                 ModelState.Remove(nameof(grant.Justification));
+                ModelState.Remove(nameof(grant.AccountNumber));
                 ModelState.Remove(nameof(grant.ProjectDirectorUserId));
                 ModelState.Remove(nameof(grant.PrincipalInvestigatorUserId));
 
@@ -67,6 +68,7 @@ namespace TrellYeahCapstone.Controllers
 
                 grant.Description ??= string.Empty;
                 grant.Justification ??= string.Empty;
+                grant.AccountNumber ??= string.Empty;
 
                 grant.ProjectDirectorUserId = string.IsNullOrWhiteSpace(grant.ProjectDirectorUserId)
                     ? currentUserId
@@ -320,6 +322,7 @@ namespace TrellYeahCapstone.Controllers
                 ModelState.Remove(nameof(grant.Title));
                 ModelState.Remove(nameof(grant.Description));
                 ModelState.Remove(nameof(grant.Justification));
+                ModelState.Remove(nameof(grant.AccountNumber));
                 ModelState.Remove(nameof(grant.ProjectDirectorUserId));
                 ModelState.Remove(nameof(grant.PrincipalInvestigatorUserId));
 
@@ -329,6 +332,7 @@ namespace TrellYeahCapstone.Controllers
 
                 grant.Description ??= string.Empty;
                 grant.Justification ??= string.Empty;
+                grant.AccountNumber ??= string.Empty;
             }
 
             if (isSubmitting &&
@@ -364,6 +368,7 @@ namespace TrellYeahCapstone.Controllers
             existingGrant.Title = grant.Title;
             existingGrant.Description = grant.Description;
             existingGrant.Justification = grant.Justification;
+            existingGrant.AccountNumber = grant.AccountNumber;
             existingGrant.Timeline = grant.Timeline;
             existingGrant.ProjectDirectorUserId = grant.ProjectDirectorUserId;
             existingGrant.PrincipalInvestigatorUserId = grant.PrincipalInvestigatorUserId;
@@ -447,7 +452,7 @@ namespace TrellYeahCapstone.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "ARCCmember,ARCCchair")]
-        public async Task<IActionResult> SaveReviewScores(int id, Dictionary<int, int> scores)
+        public async Task<IActionResult> SaveReviewScores(int id, Dictionary<int, int> scores, string? arccChairApprovalNotes)
         {
             var currentUserId = _userManager.GetUserId(User);
             if (string.IsNullOrWhiteSpace(currentUserId))
@@ -511,6 +516,17 @@ namespace TrellYeahCapstone.Controllers
                 {
                     existingScore.Score = selectedScore;
                 }
+            }
+
+            var grant = await _context.Grants.FindAsync(id);
+            if (grant == null)
+            {
+                return NotFound();
+            }
+
+            if (User.IsInRole("ARCCchair"))
+            {
+                grant.ArccChairApprovalNotes = arccChairApprovalNotes;
             }
 
             await _context.SaveChangesAsync();

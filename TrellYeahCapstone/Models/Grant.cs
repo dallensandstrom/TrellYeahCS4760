@@ -25,6 +25,11 @@ namespace TrellYeahCS4760.Models
         public string Justification { get; set; } = string.Empty;
 
         [Required]
+        [Display(Name = "Account Number")]
+        [StringLength(50)]
+        public string AccountNumber { get; set; } = string.Empty;
+
+        [Required]
         [Display(Name = "Project Director")]
         public string ProjectDirectorUserId { get; set; } = string.Empty;
 
@@ -110,6 +115,9 @@ namespace TrellYeahCS4760.Models
 
         [StringLength(1000)]
         public string? DeanApprovalNotes { get; set; }
+
+        [StringLength(1000)]
+        public string? ArccChairApprovalNotes { get; set; }
 
         public List<BudgetItem> BudgetItems { get; set; } = new();
     }
