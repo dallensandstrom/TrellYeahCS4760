@@ -31,12 +31,14 @@ namespace TrellYeahCapstone.Controllers
         public async Task<IActionResult> Create()
         {
             var currentUserId = _userManager.GetUserId(User) ?? string.Empty;
+            var user = await _userManager.GetUserAsync(User);
 
             var grant = new Grant
             {
                 ProjectDirectorUserId = currentUserId,
                 PrincipalInvestigatorUserId = currentUserId,
-                UserOptions = await GetUserOptionsAsync()
+                UserOptions = await GetUserOptionsAsync(),
+                AccountNumber = user?.AccountNumber ?? 0
             };
 
             return View(grant);
@@ -68,7 +70,7 @@ namespace TrellYeahCapstone.Controllers
 
                 grant.Description ??= string.Empty;
                 grant.Justification ??= string.Empty;
-                grant.AccountNumber ??= string.Empty;
+                grant.AccountNumber = 0;
 
                 grant.ProjectDirectorUserId = string.IsNullOrWhiteSpace(grant.ProjectDirectorUserId)
                     ? currentUserId
@@ -332,7 +334,7 @@ namespace TrellYeahCapstone.Controllers
 
                 grant.Description ??= string.Empty;
                 grant.Justification ??= string.Empty;
-                grant.AccountNumber ??= string.Empty;
+                grant.AccountNumber = 0;
             }
 
             if (isSubmitting &&

@@ -52,7 +52,8 @@ namespace TrellYeahCapstone.Models
                     Email = adminEmail,
                     FirstName = "Admin",
                     LastName = "User",
-                    EmailConfirmed = true
+                    EmailConfirmed = true,
+                    AccountNumber = 1000
                 };
 
                 await userManager.CreateAsync(adminUser, "Password1!");
@@ -81,7 +82,8 @@ namespace TrellYeahCapstone.Models
                         Email = userEmail,
                         FirstName = $"First{i}",
                         LastName = $"Last{i}",
-                        EmailConfirmed = true
+                        EmailConfirmed = true,
+                        AccountNumber = 1000 + i
                     };
 
                     await userManager.CreateAsync(seedUser, "Password1!");
@@ -89,6 +91,7 @@ namespace TrellYeahCapstone.Models
 
                 seedUser.FirstName = $"First{i}";
                 seedUser.LastName = $"Last{i}";
+                seedUser.AccountNumber = 1000 + i;
                 await userManager.UpdateAsync(seedUser);
 
                 seedUsers.Add(seedUser);
