@@ -17,57 +17,17 @@
 </div>
 
 <section>
-    <h2 class="h4">My Grant Applications</h2>
+    <h2 class="h4">Submitted Grant Applications</h2>
 
-    @if (!Model.UserGrants.Any())
-    {
-        <div class="alert alert-info">
-            You have not started any grant applications yet.
-        </div>
-    }
-    else
-    {
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Title</th>
-                    <th>Status</th>
-                    <th>Submitted</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var grant in Model.UserGrants)
-                {
-                    <tr>
-                        <td>@grant.Title</td>
-                        <td>@grant.Status</td>
-                        <td>
-                            @(grant.SubmittedAt.HasValue
-                                ? grant.SubmittedAt.Value.ToString("MMM d, yyyy h:mm tt")
-                                : "Not submitted")
-                        </td>
-                        <td>
-                            <a asp-controller="Grants" asp-action="Details" asp-route-id="@grant.GrantId" class="btn btn-sm btn-outline-secondary">
-                                View
-                            </a>
+    @await Html.PartialAsync("_GrantApplicationTable", Model.SavedGrants,
+        new ViewDataDictionary(ViewData) { { "SectionTitle", "Saved Grant Applications" }, { "EmptyMessage", "You do not have any saved grant applications." } })
 
-                            @if (grant.Status == "In Progress")
-                            {
-                                <a asp-controller="Grants" asp-action="Edit" asp-route-id="@grant.GrantId" class="btn btn-sm btn-primary">
-                                    Continue Editing
-                                </a>
-                            }
-                            else
-                            {
-                                <button class="btn btn-sm btn-outline-secondary" disabled title="@grant.Status">
-                                    Locked
-                                </button>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
+    @await Html.PartialAsync("_GrantApplicationTable", Model.SubmittedGrants,
+        new ViewDataDictionary(ViewData) { { "SectionTitle", "Submitted Grant Applications" }, { "EmptyMessage", "You do not have any submitted grant applications." } })
+
+    @await Html.PartialAsync("_GrantApplicationTable", Model.AcceptedGrants,
+        new ViewDataDictionary(ViewData) { { "SectionTitle", "Accepted Grant Applications" }, { "EmptyMessage", "You do not have any accepted grant applications." } })
+
+    @await Html.PartialAsync("_GrantApplicationTable", Model.RejectedGrants,
+        new ViewDataDictionary(ViewData) { { "SectionTitle", "Rejected Grant Applications" }, { "EmptyMessage", "You do not have any rejected grant applications." } })
 </section>

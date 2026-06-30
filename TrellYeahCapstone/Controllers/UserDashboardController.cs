@@ -41,7 +41,30 @@ namespace TrellYeahCS4760.Controllers
 
             var viewModel = new UserDashboardViewModel
             {
-                UserGrants = grants
+                SavedGrants = grants
+                .Where(g => g.Status == "In Progress")
+                .ToList(),
+
+                SubmittedGrants = grants
+                .Where(g =>
+                    g.Status == "Submitted" ||
+                    g.Status == "Approved by Department Chair" ||
+                    g.Status == "Approved by Dean")
+                .ToList(),
+
+                AcceptedGrants = grants
+                .Where(g =>
+                    g.Status == "Approved by ARCC" ||
+                    g.Status == "Accepted")
+                .ToList(),
+
+                RejectedGrants = grants
+                .Where(g =>
+                    g.Status == "Rejected by Department Chair" ||
+                    g.Status == "Rejected by Dean" ||
+                    g.Status == "Rejected by ARCC" ||
+                    g.Status == "Rejected")
+                .ToList()
             };
 
             return View(viewModel);
