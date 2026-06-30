@@ -77,6 +77,7 @@ namespace TrellYeahCapstone.Areas.Identity.Pages.Account.Manage
 
             public int? CollegeId { get; set; }
             public int? DepartmentId { get; set; }
+            public int AccountNumber { get; set; }
         }
 
         private async Task LoadAsync(ApplicationUser user)
@@ -95,7 +96,8 @@ namespace TrellYeahCapstone.Areas.Identity.Pages.Account.Manage
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 CollegeId = user.CollegeId,
-                DepartmentId = user.DepartmentId
+                DepartmentId = user.DepartmentId,
+                AccountNumber = user.AccountNumber,
             };
         }
 
@@ -117,6 +119,15 @@ namespace TrellYeahCapstone.Areas.Identity.Pages.Account.Manage
             if (user == null)
             {
                 return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+            }
+
+            //Prevent changing to an account number that's already in use
+            var exists = _userManager.Users.Any(u => u.AccountNumber == Input.AccountNumber && u.Id != user.Id);
+            if (exists)
+            {
+                ModelState.AddModelError("Input.AccountNumber", "That account number is already in use.");
+                await LoadAsync(user);
+                return Page();
             }
 
             if (!ModelState.IsValid)
@@ -141,6 +152,7 @@ namespace TrellYeahCapstone.Areas.Identity.Pages.Account.Manage
             user.LastName = Input.LastName;
             user.CollegeId = Input.CollegeId;
             user.DepartmentId = Input.DepartmentId;
+            user.AccountNumber = Input.AccountNumber;
 
             await _userManager.UpdateAsync(user);
 

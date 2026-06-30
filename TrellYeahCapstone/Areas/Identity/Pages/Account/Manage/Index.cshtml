@@ -32,51 +32,64 @@
                 <label asp-for="Input.LastName">Last Name</label>
                 <span asp-validation-for="Input.LastName" class="text-danger"></span>
             </div>
+            <div class="form-floating mb-3">
+                <input asp-for="Input.AccountNumber" class="form-control" />
+                <label asp-for="Input.AccountNumber">Account Number</label>
+                <span asp-validation-for="Input.AccountNumber" class="text-danger"></span>
+            </div>
             @if (User.IsInRole("CollegeDean")){
-                <div class="form-floating mb-3">
+                <div class="form-label mb-3">
+                    <label asp-for="Input.CollegeId">College</label>
                     <select asp-for="Input.CollegeId"
                             asp-items="Model.CollegeList"
-                            class="form-select" disabled>
-                        <option value="">Select College</option>
+                            class="form-select" readonly>
+                            <option selected="@(Model.Input.CollegeId == null)" value="">
+                                Select Department
+                            </option>
                     </select>
-                    <label asp-for="Input.CollegeId"></label>
                     <span asp-validation-for="Input.CollegeId" class="text-danger"></span>
                 </div>
             }
             else
             {
-                <div class="form-floating mb-3">
+                <div class="form-label mb-3">
+                    <label asp-for="Input.CollegeId">College</label>
                     <select asp-for="Input.CollegeId"
                             asp-items="Model.CollegeList"
                             class="form-select">
-                        <option value="">Select College</option>
+                            <option selected="@(Model.Input.CollegeId == null)" value="">
+                                Select Department
+                            </option>
                     </select>
-                    <label asp-for="Input.CollegeId"></label>
                     <span asp-validation-for="Input.CollegeId" class="text-danger"></span>
                 </div>
             }
 
             @if (User.IsInRole("DeptChair"))
             {
-                <div class="form-floating mb-3">
+                <div class="form-label mb-3">
+                    <label asp-for="Input.DepartmentId">Department</label>
                     <select asp-for="Input.DepartmentId"
                             asp-items="Model.DepartmentList"
-                            class="form-select" disabled>
-                        <option value="">Select Department</option>
+                            class="form-select" readonly>
+                            <option selected="@(Model.Input.DepartmentId == null)" value="">
+                                Select Department
+                            </option>
                     </select>
-                    <label asp-for="Input.DepartmentId"></label>
                     <span asp-validation-for="Input.DepartmentId" class="text-danger"></span>
                 </div>
             }
             else
             {
-                <div class="form-floating mb-3">
+                <div class="form-label mb-3">
+                    <label asp-for="Input.DepartmentId">Department</label>
                     <select asp-for="Input.DepartmentId"
                             asp-items="Model.DepartmentList"
                             class="form-select">
-                        <option value="">Select Department</option>
+                        <option selected="@(Model.Input.DepartmentId == null)" value="">
+                            Select Department
+                        </option>
                     </select>
-                    <label asp-for="Input.DepartmentId"></label>
                     <span asp-validation-for="Input.DepartmentId" class="text-danger"></span>
                 </div>
             }

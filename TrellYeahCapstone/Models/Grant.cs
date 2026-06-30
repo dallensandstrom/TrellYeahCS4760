@@ -25,9 +25,7 @@ namespace TrellYeahCS4760.Models
         public string Justification { get; set; } = string.Empty;
 
         [Required]
-        [Display(Name = "Account Number")]
-        [StringLength(50)]
-        public string AccountNumber { get; set; } = string.Empty;
+        public int AccountNumber { get; set; }
 
         [Required]
         [Display(Name = "Project Director")]
