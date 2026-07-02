@@ -17,5 +17,7 @@ namespace TrellYeahCapstone.Models
         public int ReviewerCount { get; set; }
 
         public string Status { get; set; } = string.Empty;
+
+        public decimal? AllocatedAmount { get; set; }
     }
 }
