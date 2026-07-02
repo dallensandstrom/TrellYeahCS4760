@@ -11,6 +11,11 @@
     <div class="alert alert-success">@TempData["SuccessMessage"]</div>
 }
 
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
 <section class="mb-5">
     <h2 class="h4">Submitted Grant Applications</h2>
     @if (!Model.SubmittedGrants.Any())
@@ -28,6 +33,7 @@
                         <th>Requested from ARCC</th>
                         <th>Requested from other sources</th>
                         <th>Average score</th>
+                        <th>Allocated money</th>
                         <th>Status</th>
                     </tr>
                 </thead>
@@ -48,6 +54,16 @@
                                 else
                                 {
                                     <span class="text-muted">Not reviewed</span>
+                                }
+                            </td>
+                            <td>
+                                @if (grant.AllocatedAmount.HasValue)
+                                {
+                                    <span>@grant.AllocatedAmount.Value.ToString("C")</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Not allocated</span>
                                 }
                             </td>
                             <td>@grant.Status</td>
@@ -105,6 +121,82 @@
             </table>
         </div>
     }
+</section>
+
+<section class="mb-5">
+    <h2 class="h4">Grant Allocation Criteria</h2>
+    <p class="text-muted">Define score ranges and what percentage of the requested ARCC amount each range receives. Click <strong>Apply Criteria</strong> to compute and save allocated amounts for submitted grants.</p>
+
+    @if (!Model.AllocationCriteria.Any())
+    {
+        <div class="alert alert-info">No criteria defined yet. Add one below.</div>
+    }
+    else
+    {
+        <table class="table table-striped align-middle mb-3">
+            <thead>
+                <tr>
+                    <th>Min score %</th>
+                    <th>Max score %</th>
+                    <th>Allocation %</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var criterion in Model.AllocationCriteria)
+                {
+                    <tr>
+                        <td>@criterion.MinScorePercentage.ToString("0.##")%</td>
+                        <td>@criterion.MaxScorePercentage.ToString("0.##")%</td>
+                        <td>@criterion.AllocationPercentage.ToString("0.##")%</td>
+                        <td>
+                            <form asp-action="DeleteCriterion" method="post" style="display:inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@criterion.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <form asp-action="ApplyCriteria" method="post" class="mb-3">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-success">Apply Criteria</button>
+        </form>
+    }
+
+    <h3 class="h5 mt-3">Add a criterion</h3>
+    <form asp-action="AddCriterion" method="post">
+        @Html.AntiForgeryToken()
+        <div class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label asp-for="NewCriterionMinScore" class="form-label"></label>
+                <div class="input-group">
+                    <input asp-for="NewCriterionMinScore" class="form-control" type="number" min="0" max="100" step="0.01" style="width:100px" />
+                    <span class="input-group-text">%</span>
+                </div>
+            </div>
+            <div class="col-auto">
+                <label asp-for="NewCriterionMaxScore" class="form-label"></label>
+                <div class="input-group">
+                    <input asp-for="NewCriterionMaxScore" class="form-control" type="number" min="0" max="100" step="0.01" style="width:100px" />
+                    <span class="input-group-text">%</span>
+                </div>
+            </div>
+            <div class="col-auto">
+                <label asp-for="NewCriterionAllocationPercentage" class="form-label"></label>
+                <div class="input-group">
+                    <input asp-for="NewCriterionAllocationPercentage" class="form-control" type="number" min="0" max="100" step="0.01" style="width:100px" />
+                    <span class="input-group-text">%</span>
+                </div>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Add criterion</button>
+            </div>
+        </div>
+    </form>
 </section>
 
 <section>

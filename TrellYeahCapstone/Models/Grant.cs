@@ -117,6 +117,9 @@ namespace TrellYeahCS4760.Models
         [StringLength(1000)]
         public string? ArccChairApprovalNotes { get; set; }
 
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? AllocatedAmount { get; set; }
+
         public List<BudgetItem> BudgetItems { get; set; } = new();
     }
 }

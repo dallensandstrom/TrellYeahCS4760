@@ -176,6 +176,9 @@ namespace TrellYeahCS4760.Controllers
                 PastAllocations = await _context.GrantAllocations
                     .OrderByDescending(a => a.CreatedAt)
                     .ToListAsync(),
+                AllocationCriteria = await _context.AllocationCriteria
+                    .OrderBy(c => c.MinScorePercentage)
+                    .ToListAsync(),
                 SubmittedGrants = await BuildGrantAllocationSummariesAsync(ArccReviewStatuses),
                 RejectedGrants = await BuildGrantAllocationSummariesAsync(ArccRejectedStatuses)
             };
@@ -223,7 +226,8 @@ namespace TrellYeahCS4760.Controllers
                             item.CollegeAmount + item.DepartmentAmount + item.OtherAmount),
                         AverageScorePercentage = score.AveragePercentage,
                         ReviewerCount = score.ReviewerCount,
-                        Status = g.Status
+                        Status = g.Status,
+                        AllocatedAmount = g.AllocatedAmount
                     };
                 })
                 .ToList();
@@ -268,7 +272,87 @@ namespace TrellYeahCS4760.Controllers
             return averages;
         }
 
-        private async Task<int> ApplyCutoffPercentageAsync(decimal cutoffPercentage)
+        [HttpPost]
+                [ValidateAntiForgeryToken]
+                [Authorize(Roles = "ARCCchair")]
+                public async Task<IActionResult> AddCriterion(AllocationViewModel model)
+                {
+                    if (model.NewCriterionMinScore >= model.NewCriterionMaxScore)
+                    {
+                        TempData["ErrorMessage"] = "Min score must be less than max score.";
+                        return RedirectToAction(nameof(Allocation));
+                    }
+
+                    _context.AllocationCriteria.Add(new AllocationCriterion
+                    {
+                        MinScorePercentage = model.NewCriterionMinScore,
+                        MaxScorePercentage = model.NewCriterionMaxScore,
+                        AllocationPercentage = model.NewCriterionAllocationPercentage
+                    });
+
+                    await _context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = "Criterion added.";
+                    return RedirectToAction(nameof(Allocation));
+                }
+
+                [HttpPost]
+                [ValidateAntiForgeryToken]
+                [Authorize(Roles = "ARCCchair")]
+                public async Task<IActionResult> DeleteCriterion(int id)
+                {
+                    var criterion = await _context.AllocationCriteria.FindAsync(id);
+                    if (criterion != null)
+                    {
+                        _context.AllocationCriteria.Remove(criterion);
+                        await _context.SaveChangesAsync();
+                    }
+
+                    TempData["SuccessMessage"] = "Criterion removed.";
+                    return RedirectToAction(nameof(Allocation));
+                }
+
+                [HttpPost]
+                [ValidateAntiForgeryToken]
+                [Authorize(Roles = "ARCCchair")]
+                public async Task<IActionResult> ApplyCriteria()
+                {
+                    var criteria = await _context.AllocationCriteria.ToListAsync();
+
+                    var summaries = await BuildGrantAllocationSummariesAsync(ArccReviewStatuses);
+                    var grantIds = summaries.Select(s => s.GrantId).ToList();
+
+                    var grants = await _context.Grants
+                        .Where(g => grantIds.Contains(g.GrantId))
+                        .Include(g => g.BudgetItems)
+                        .ToListAsync();
+
+                    foreach (var grant in grants)
+                    {
+                        var summary = summaries.First(s => s.GrantId == grant.GrantId);
+                        decimal? allocated = null;
+
+                        if (summary.AverageScorePercentage.HasValue && criteria.Any())
+                        {
+                            var score = summary.AverageScorePercentage.Value;
+                            var match = criteria.FirstOrDefault(c =>
+                                score >= c.MinScorePercentage && score <= c.MaxScorePercentage);
+
+                            if (match != null)
+                            {
+                                var requested = grant.BudgetItems.Sum(item => item.ARCCAmount);
+                                allocated = Math.Round(requested * match.AllocationPercentage / 100, 2);
+                            }
+                        }
+
+                        grant.AllocatedAmount = allocated;
+                    }
+
+                    await _context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = "Allocation criteria applied to submitted grants.";
+                    return RedirectToAction(nameof(Allocation));
+                }
+
+                private async Task<int> ApplyCutoffPercentageAsync(decimal cutoffPercentage)
         {
             var grantSummaries = await BuildGrantAllocationSummariesAsync(ArccReviewStatuses);
             var rejectedGrantIds = grantSummaries
