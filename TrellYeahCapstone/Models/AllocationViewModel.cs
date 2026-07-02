@@ -10,7 +10,13 @@ namespace TrellYeahCapstone.Models
 
         public List<AllocationGrantSummaryViewModel> RejectedGrants { get; set; } = [];
 
+        public List<AllocationGrantSummaryViewModel> AccountingGrants { get; set; } = [];
+
         public List<AllocationCriterion> AllocationCriteria { get; set; } = [];
+
+        public bool CanFinishAllocating => SubmittedGrants.Any(grant => grant.AllocatedAmount > 0);
+
+        public bool CanSendToAccounting => AccountingGrants.Any();
 
         [Required]
         [Range(0, double.MaxValue, ErrorMessage = "Amount must be 0 or greater.")]

@@ -199,6 +199,58 @@
     </form>
 </section>
 
+<section class="mb-5">
+    <h2 class="h4">Final Allocation</h2>
+    @if (Model.CanFinishAllocating)
+    {
+        <form asp-action="FinishAllocating" method="post" class="mb-3">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-success">Finish allocating</button>
+        </form>
+    }
+    else
+    {
+        <p class="text-muted">No submitted applications currently have allocated money to finalize.</p>
+    }
+
+    @if (Model.CanSendToAccounting)
+    {
+        <a asp-action="SendToAccounting" class="btn btn-primary">Send to accounting</a>
+    }
+</section>
+
+@if (Model.AccountingGrants.Any())
+{
+    <section class="mb-5">
+        <h2 class="h4">Finalized Applications</h2>
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Principal investigator</th>
+                        <th>Allocated money</th>
+                        <th>Report due date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var grant in Model.AccountingGrants)
+                    {
+                        <tr>
+                            <td>@grant.Title</td>
+                            <td>@grant.PrincipalInvestigatorName</td>
+                            <td>@grant.AllocatedAmount.GetValueOrDefault().ToString("C")</td>
+                            <td>@(grant.ReportDueDate?.ToString("MMM d, yyyy") ?? "Not set")</td>
+                            <td>@grant.Status</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}
+
 <section>
     <h2 class="h4">Grant Allocation Cutoff Percentage</h2>
     <p class="text-muted">The cutoff only rejects applications that already have at least one ARCC rubric review.</p>
