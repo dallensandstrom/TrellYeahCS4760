@@ -526,10 +526,7 @@ namespace TrellYeahCapstone.Controllers
                 return NotFound();
             }
 
-            if (User.IsInRole("ARCCchair"))
-            {
-                grant.ArccChairApprovalNotes = arccChairApprovalNotes;
-            }
+            grant.ArccChairApprovalNotes = arccChairApprovalNotes?.Trim();
 
             await _context.SaveChangesAsync();
 

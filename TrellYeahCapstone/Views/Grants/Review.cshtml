@@ -264,16 +264,14 @@
                             <span>@Model.ScorePercentage.ToString("0.##")%</span>
                         </div>
                     </div>
-                    @if (User.IsInRole("ARCCchair"))
-                    {
-                        <div class="mb-3">
-                            <label for="arccChairApprovalNotes" class="form-label">ARCC Chair Notes (Optional)</label>
-                            <textarea id="arccChairApprovalNotes"
-                                      name="arccChairApprovalNotes"
-                                      class="form-control"
-                                      rows="3">@grant.ArccChairApprovalNotes</textarea>
-                        </div>
-                    }
+
+                    <div class="mb-3">
+                        <label for="arccChairApprovalNotes" class="form-label">ARCC Notes (Optional)</label>
+                        <textarea id="arccChairApprovalNotes"
+                                    name="arccChairApprovalNotes"
+                                    class="form-control"
+                                    rows="3">@grant.ArccChairApprovalNotes</textarea>
+                    </div>
 
                     <button type="submit" class="btn btn-primary w-100 mt-3">Save Rating</button>
                 </form>

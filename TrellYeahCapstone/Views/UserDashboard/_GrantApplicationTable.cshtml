@@ -1,0 +1,62 @@
+﻿@model List<TrellYeahCS4760.Models.Grant>
+
+@{
+    var sectionTitle = ViewData["SectionTitle"]?.ToString() ?? "Grant Applications";
+    var emptyMessage = ViewData["EmptyMessage"]?.ToString() ?? "No grant applications found.";
+}
+
+<div class="mb-4">
+    <h3 class="h5">@sectionTitle</h3>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">
+            @emptyMessage
+        </div>
+    }
+    else
+    {
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Status</th>
+                    <th>Submitted</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var grant in Model)
+                {
+                    <tr>
+                        <td>@grant.Title</td>
+                        <td>@grant.Status</td>
+                        <td>
+                            @(grant.SubmittedAt.HasValue
+                                ? grant.SubmittedAt.Value.ToString("MMM d, yyyy h:mm tt")
+                                : "Not submitted")
+                        </td>
+                        <td>
+                            <a asp-controller="Grants" asp-action="Details" asp-route-id="@grant.GrantId" class="btn btn-sm btn-outline-secondary">
+                                View
+                            </a>
+
+                            @if (grant.Status == "In Progress")
+                            {
+                                <a asp-controller="Grants" asp-action="Edit" asp-route-id="@grant.GrantId" class="btn btn-sm btn-primary">
+                                    Continue Editing
+                                </a>
+                            }
+                            else
+                            {
+                                <button class="btn btn-sm btn-outline-secondary" disabled title="@grant.Status">
+                                    Locked
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
