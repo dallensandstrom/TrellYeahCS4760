@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
+using System.Text;
 using TrellYeahCapstone.Data;
 using TrellYeahCapstone.Models;
 
@@ -21,6 +23,10 @@ namespace TrellYeahCS4760.Controllers
         private static readonly string[] ArccRejectedStatuses =
         [
             "Rejected by ARCC"
+        ];
+        private static readonly string[] ArccAccountingStatuses =
+        [
+            "Approved by ARCC"
         ];
 
         public UserDashboardController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
@@ -180,7 +186,8 @@ namespace TrellYeahCS4760.Controllers
                     .OrderBy(c => c.MinScorePercentage)
                     .ToListAsync(),
                 SubmittedGrants = await BuildGrantAllocationSummariesAsync(ArccReviewStatuses),
-                RejectedGrants = await BuildGrantAllocationSummariesAsync(ArccRejectedStatuses)
+                RejectedGrants = await BuildGrantAllocationSummariesAsync(ArccRejectedStatuses),
+                AccountingGrants = await BuildGrantAllocationSummariesAsync(ArccAccountingStatuses)
             };
         }
 
@@ -227,7 +234,8 @@ namespace TrellYeahCS4760.Controllers
                         AverageScorePercentage = score.AveragePercentage,
                         ReviewerCount = score.ReviewerCount,
                         Status = g.Status,
-                        AllocatedAmount = g.AllocatedAmount
+                        AllocatedAmount = g.AllocatedAmount,
+                        ReportDueDate = g.ReportDueDate
                     };
                 })
                 .ToList();
@@ -352,6 +360,78 @@ namespace TrellYeahCS4760.Controllers
                     return RedirectToAction(nameof(Allocation));
                 }
 
+                [HttpPost]
+                [ValidateAntiForgeryToken]
+                [Authorize(Roles = "ARCCchair")]
+                public async Task<IActionResult> FinishAllocating()
+                {
+                    var reportDueDate = GetReportDueDate(DateTime.Today);
+                    var grantsToAward = await _context.Grants
+                        .Where(grant =>
+                            ArccReviewStatuses.Contains(grant.Status) &&
+                            grant.AllocatedAmount.HasValue &&
+                            grant.AllocatedAmount.Value > 0)
+                        .ToListAsync();
+
+                    foreach (var grant in grantsToAward)
+                    {
+                        grant.Status = "Approved by ARCC";
+                        grant.ReportDueDate = reportDueDate;
+                    }
+
+                    await _context.SaveChangesAsync();
+
+                    TempData["SuccessMessage"] =
+                        $"Allocation finished. {grantsToAward.Count} funded grant application(s) were approved by ARCC.";
+                    return RedirectToAction(nameof(Allocation));
+                }
+
+                [HttpGet]
+                [Authorize(Roles = "ARCCchair")]
+                public async Task<IActionResult> SendToAccounting()
+                {
+                    var grants = await _context.Grants
+                        .Where(grant =>
+                            ArccAccountingStatuses.Contains(grant.Status) &&
+                            grant.AllocatedAmount.HasValue &&
+                            grant.AllocatedAmount.Value > 0)
+                        .OrderBy(grant => grant.Title)
+                        .ToListAsync();
+
+                    var piIds = grants
+                        .Select(grant => grant.PrincipalInvestigatorUserId)
+                        .Where(id => !string.IsNullOrWhiteSpace(id))
+                        .Distinct()
+                        .ToList();
+
+                    var piNames = await _context.Users
+                        .Where(user => piIds.Contains(user.Id))
+                        .ToDictionaryAsync(user => user.Id, user => GetUserDisplayName(user));
+
+                    var spreadsheet = new StringBuilder();
+                    spreadsheet.AppendLine("Title,Principal Investigator,Allocated Money");
+
+                    foreach (var grant in grants)
+                    {
+                        var principalInvestigator = piNames.GetValueOrDefault(
+                            grant.PrincipalInvestigatorUserId,
+                            "Unknown user");
+                        var allocatedAmount = grant.AllocatedAmount.GetValueOrDefault()
+                            .ToString("0.00", CultureInfo.InvariantCulture);
+
+                        spreadsheet.AppendLine(string.Join(",",
+                            EscapeCsvValue(grant.Title),
+                            EscapeCsvValue(principalInvestigator),
+                            EscapeCsvValue(allocatedAmount)));
+                    }
+
+                    var fileName = $"AccountingAllocations_{DateTime.Today:yyyyMMdd}.csv";
+                    return File(
+                        Encoding.UTF8.GetBytes(spreadsheet.ToString()),
+                        "text/csv",
+                        fileName);
+                }
+
                 private async Task<int> ApplyCutoffPercentageAsync(decimal cutoffPercentage)
         {
             var grantSummaries = await BuildGrantAllocationSummariesAsync(ArccReviewStatuses);
@@ -377,6 +457,25 @@ namespace TrellYeahCS4760.Controllers
             }
 
             return grantsToReject.Count;
+        }
+
+        private static DateTime GetReportDueDate(DateTime today)
+        {
+            var academicYearEnd = today.Date <= new DateTime(today.Year, 6, 30)
+                ? new DateTime(today.Year, 6, 30)
+                : new DateTime(today.Year + 1, 6, 30);
+
+            return academicYearEnd.AddYears(1);
+        }
+
+        private static string EscapeCsvValue(string value)
+        {
+            if (value.Contains('"') || value.Contains(',') || value.Contains('\n') || value.Contains('\r'))
+            {
+                return $"\"{value.Replace("\"", "\"\"")}\"";
+            }
+
+            return value;
         }
     }
 }

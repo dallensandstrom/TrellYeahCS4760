@@ -120,6 +120,8 @@ namespace TrellYeahCS4760.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal? AllocatedAmount { get; set; }
 
+        public DateTime? ReportDueDate { get; set; }
+
         public List<BudgetItem> BudgetItems { get; set; } = new();
     }
 }

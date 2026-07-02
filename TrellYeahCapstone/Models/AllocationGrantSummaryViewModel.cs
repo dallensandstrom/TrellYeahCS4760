@@ -19,5 +19,7 @@ namespace TrellYeahCapstone.Models
         public string Status { get; set; } = string.Empty;
 
         public decimal? AllocatedAmount { get; set; }
+
+        public DateTime? ReportDueDate { get; set; }
     }
 }
