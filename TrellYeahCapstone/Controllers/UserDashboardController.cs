@@ -281,158 +281,244 @@ namespace TrellYeahCS4760.Controllers
         }
 
         [HttpPost]
-                [ValidateAntiForgeryToken]
-                [Authorize(Roles = "ARCCchair")]
-                public async Task<IActionResult> AddCriterion(AllocationViewModel model)
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "ARCCchair")]
+        public async Task<IActionResult> AddCriterion(AllocationViewModel model)
+        {
+            if (model.NewCriterionMinScore >= model.NewCriterionMaxScore)
+            {
+                TempData["ErrorMessage"] = "Min score must be less than max score.";
+                return RedirectToAction(nameof(Allocation));
+            }
+
+            _context.AllocationCriteria.Add(new AllocationCriterion
+            {
+                MinScorePercentage = model.NewCriterionMinScore,
+                MaxScorePercentage = model.NewCriterionMaxScore,
+                AllocationPercentage = model.NewCriterionAllocationPercentage
+            });
+
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Criterion added.";
+            return RedirectToAction(nameof(Allocation));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "ARCCchair")]
+        public async Task<IActionResult> DeleteCriterion(int id)
+        {
+            var criterion = await _context.AllocationCriteria.FindAsync(id);
+            if (criterion != null)
+            {
+                _context.AllocationCriteria.Remove(criterion);
+                await _context.SaveChangesAsync();
+            }
+
+            TempData["SuccessMessage"] = "Criterion removed.";
+            return RedirectToAction(nameof(Allocation));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "ARCCchair")]
+        public async Task<IActionResult> ApplyCriteria()
+        {
+            var criteria = await _context.AllocationCriteria.ToListAsync();
+
+            var summaries = await BuildGrantAllocationSummariesAsync(ArccReviewStatuses);
+            var grantIds = summaries.Select(s => s.GrantId).ToList();
+
+            var grants = await _context.Grants
+                .Where(g => grantIds.Contains(g.GrantId))
+                .Include(g => g.BudgetItems)
+                .ToListAsync();
+
+            foreach (var grant in grants)
+            {
+                var summary = summaries.First(s => s.GrantId == grant.GrantId);
+                decimal? allocated = null;
+
+                if (summary.AverageScorePercentage.HasValue && criteria.Any())
                 {
-                    if (model.NewCriterionMinScore >= model.NewCriterionMaxScore)
+                    var score = summary.AverageScorePercentage.Value;
+                    var match = criteria.FirstOrDefault(c =>
+                        score >= c.MinScorePercentage && score <= c.MaxScorePercentage);
+
+                    if (match != null)
                     {
-                        TempData["ErrorMessage"] = "Min score must be less than max score.";
-                        return RedirectToAction(nameof(Allocation));
+                        var requested = grant.BudgetItems.Sum(item => item.ARCCAmount);
+                        allocated = Math.Round(requested * match.AllocationPercentage / 100, 2);
                     }
-
-                    _context.AllocationCriteria.Add(new AllocationCriterion
-                    {
-                        MinScorePercentage = model.NewCriterionMinScore,
-                        MaxScorePercentage = model.NewCriterionMaxScore,
-                        AllocationPercentage = model.NewCriterionAllocationPercentage
-                    });
-
-                    await _context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = "Criterion added.";
-                    return RedirectToAction(nameof(Allocation));
                 }
 
-                [HttpPost]
-                [ValidateAntiForgeryToken]
-                [Authorize(Roles = "ARCCchair")]
-                public async Task<IActionResult> DeleteCriterion(int id)
-                {
-                    var criterion = await _context.AllocationCriteria.FindAsync(id);
-                    if (criterion != null)
-                    {
-                        _context.AllocationCriteria.Remove(criterion);
-                        await _context.SaveChangesAsync();
-                    }
+                grant.AllocatedAmount = allocated;
+            }
 
-                    TempData["SuccessMessage"] = "Criterion removed.";
-                    return RedirectToAction(nameof(Allocation));
-                }
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Allocation criteria applied to submitted grants.";
+            return RedirectToAction(nameof(Allocation));
+        }
 
-                [HttpPost]
-                [ValidateAntiForgeryToken]
-                [Authorize(Roles = "ARCCchair")]
-                public async Task<IActionResult> ApplyCriteria()
-                {
-                    var criteria = await _context.AllocationCriteria.ToListAsync();
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "ARCCchair")]
+        public async Task<IActionResult> FinishAllocating()
+        {
+            var reportDueDate = GetReportDueDate(DateTime.Today);
+            var grantsToAward = await _context.Grants
+                .Where(grant =>
+                    ArccReviewStatuses.Contains(grant.Status) &&
+                    grant.AllocatedAmount.HasValue &&
+                    grant.AllocatedAmount.Value > 0)
+                .ToListAsync();
 
-                    var summaries = await BuildGrantAllocationSummariesAsync(ArccReviewStatuses);
-                    var grantIds = summaries.Select(s => s.GrantId).ToList();
+            foreach (var grant in grantsToAward)
+            {
+                grant.Status = "Approved by ARCC";
+                grant.AwardDate = DateTime.Today;
+                grant.ReportDueDate = reportDueDate;
+            }
 
-                    var grants = await _context.Grants
-                        .Where(g => grantIds.Contains(g.GrantId))
-                        .Include(g => g.BudgetItems)
-                        .ToListAsync();
+            await _context.SaveChangesAsync();
 
-                    foreach (var grant in grants)
-                    {
-                        var summary = summaries.First(s => s.GrantId == grant.GrantId);
-                        decimal? allocated = null;
+            TempData["SuccessMessage"] =
+                $"Allocation finished. {grantsToAward.Count} funded grant application(s) were approved by ARCC.";
+            return RedirectToAction(nameof(Allocation));
+        }
 
-                        if (summary.AverageScorePercentage.HasValue && criteria.Any())
-                        {
-                            var score = summary.AverageScorePercentage.Value;
-                            var match = criteria.FirstOrDefault(c =>
-                                score >= c.MinScorePercentage && score <= c.MaxScorePercentage);
+        [HttpGet]
+        [Authorize(Roles = "ARCCchair")]
+        public async Task<IActionResult> SendToAccounting()
+        {
+            var grants = await _context.Grants
+                .Where(grant =>
+                    ArccAccountingStatuses.Contains(grant.Status) &&
+                    grant.AllocatedAmount.HasValue &&
+                    grant.AllocatedAmount.Value > 0)
+                .OrderBy(grant => grant.Title)
+                .ToListAsync();
 
-                            if (match != null)
-                            {
-                                var requested = grant.BudgetItems.Sum(item => item.ARCCAmount);
-                                allocated = Math.Round(requested * match.AllocationPercentage / 100, 2);
-                            }
-                        }
+            var piIds = grants
+                .Select(grant => grant.PrincipalInvestigatorUserId)
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Distinct()
+                .ToList();
 
-                        grant.AllocatedAmount = allocated;
-                    }
+            var piNames = await _context.Users
+                .Where(user => piIds.Contains(user.Id))
+                .ToDictionaryAsync(user => user.Id, user => GetUserDisplayName(user));
 
-                    await _context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = "Allocation criteria applied to submitted grants.";
-                    return RedirectToAction(nameof(Allocation));
-                }
+            var spreadsheet = new StringBuilder();
+            spreadsheet.AppendLine("Title,Principal Investigator,Allocated Money");
 
-                [HttpPost]
-                [ValidateAntiForgeryToken]
-                [Authorize(Roles = "ARCCchair")]
-                public async Task<IActionResult> FinishAllocating()
-                {
-                    var reportDueDate = GetReportDueDate(DateTime.Today);
-                    var grantsToAward = await _context.Grants
-                        .Where(grant =>
-                            ArccReviewStatuses.Contains(grant.Status) &&
-                            grant.AllocatedAmount.HasValue &&
-                            grant.AllocatedAmount.Value > 0)
-                        .ToListAsync();
+            foreach (var grant in grants)
+            {
+                var principalInvestigator = piNames.GetValueOrDefault(
+                    grant.PrincipalInvestigatorUserId,
+                    "Unknown user");
+                var allocatedAmount = grant.AllocatedAmount.GetValueOrDefault()
+                    .ToString("0.00", CultureInfo.InvariantCulture);
 
-                    foreach (var grant in grantsToAward)
-                    {
-                        grant.Status = "Approved by ARCC";
-                        grant.ReportDueDate = reportDueDate;
-                    }
+                spreadsheet.AppendLine(string.Join(",",
+                    EscapeCsvValue(grant.Title),
+                    EscapeCsvValue(principalInvestigator),
+                    EscapeCsvValue(allocatedAmount)));
+            }
 
-                    await _context.SaveChangesAsync();
+            var fileName = $"AccountingAllocations_{DateTime.Today:yyyyMMdd}.csv";
+            return File(
+                Encoding.UTF8.GetBytes(spreadsheet.ToString()),
+                "text/csv",
+                fileName);
+        }
+                
+        // Dallen - Submit Report should check if the grant was approved and accepted before allowing the user to submit a report on it
+        [HttpGet]
+        public async Task<IActionResult> SubmitReport(int grantId)
+        {
+            var currentUserId = _userManager.GetUserId(User);
 
-                    TempData["SuccessMessage"] =
-                        $"Allocation finished. {grantsToAward.Count} funded grant application(s) were approved by ARCC.";
-                    return RedirectToAction(nameof(Allocation));
-                }
+            var grant = await _context.Grants.FirstOrDefaultAsync(g => g.GrantId == grantId && g.UserId == currentUserId);
 
-                [HttpGet]
-                [Authorize(Roles = "ARCCchair")]
-                public async Task<IActionResult> SendToAccounting()
-                {
-                    var grants = await _context.Grants
-                        .Where(grant =>
-                            ArccAccountingStatuses.Contains(grant.Status) &&
-                            grant.AllocatedAmount.HasValue &&
-                            grant.AllocatedAmount.Value > 0)
-                        .OrderBy(grant => grant.Title)
-                        .ToListAsync();
+            if (grant == null)
+            {
+                return NotFound();
+            }
 
-                    var piIds = grants
-                        .Select(grant => grant.PrincipalInvestigatorUserId)
-                        .Where(id => !string.IsNullOrWhiteSpace(id))
-                        .Distinct()
-                        .ToList();
+            if (grant.Status != "Approved by ARCC" && grant.Status != "Accepted")
+            {
+                return Forbid();
+            }
 
-                    var piNames = await _context.Users
-                        .Where(user => piIds.Contains(user.Id))
-                        .ToDictionaryAsync(user => user.Id, user => GetUserDisplayName(user));
+            var projectDirector = await _context.Users.FirstOrDefaultAsync(u => u.Id == grant.ProjectDirectorUserId);
 
-                    var spreadsheet = new StringBuilder();
-                    spreadsheet.AppendLine("Title,Principal Investigator,Allocated Money");
+            var model = new GrantReportCreateViewModel
+            {
+                GrantId = grant.GrantId,
 
-                    foreach (var grant in grants)
-                    {
-                        var principalInvestigator = piNames.GetValueOrDefault(
-                            grant.PrincipalInvestigatorUserId,
-                            "Unknown user");
-                        var allocatedAmount = grant.AllocatedAmount.GetValueOrDefault()
-                            .ToString("0.00", CultureInfo.InvariantCulture);
+                ProjectDirector = projectDirector == null ? "Unknown User" : GetUserDisplayName(projectDirector),
 
-                        spreadsheet.AppendLine(string.Join(",",
-                            EscapeCsvValue(grant.Title),
-                            EscapeCsvValue(principalInvestigator),
-                            EscapeCsvValue(allocatedAmount)));
-                    }
+                ProjectTitle = grant.Title,
+                AccountNumber = grant.AccountNumber,
+                SubmissionDate = DateTime.Today,
+                AwardDate = grant.AwardDate
+            };
 
-                    var fileName = $"AccountingAllocations_{DateTime.Today:yyyyMMdd}.csv";
-                    return File(
-                        Encoding.UTF8.GetBytes(spreadsheet.ToString()),
-                        "text/csv",
-                        fileName);
-                }
+            return View(model);
+        }
 
-                private async Task<int> ApplyCutoffPercentageAsync(decimal cutoffPercentage)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SubmitReport(GrantReportCreateViewModel model)
+        {
+            var currentUserId = _userManager.GetUserId(User);
+
+            var grant = await _context.Grants.FirstOrDefaultAsync(g => g.GrantId == model.GrantId && g.UserId == currentUserId);
+
+            if (grant == null)
+            {
+                return NotFound();
+            }
+
+            if (grant.Status != "Approved by ARCC" && grant.Status != "Accepted")
+            {
+                return Forbid();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var projectDirector = await _context.Users.FirstOrDefaultAsync(u => u.Id == grant.ProjectDirectorUserId);
+
+                model.ProjectDirector = projectDirector == null ? "Unknown User" : GetUserDisplayName(projectDirector);
+
+                model.ProjectTitle = grant.Title;
+                model.AccountNumber = grant.AccountNumber;
+                model.SubmissionDate = DateTime.Today;
+                model.AwardDate = grant.AwardDate;
+
+                return View(model);
+            }
+
+            var report = new GrantReport
+            {
+                GrantId = grant.GrantId,
+                SubmissionDate = DateTime.Now,
+                ProjectSummary = model.ProjectSummary,
+                CurrentProgress = model.CurrentProgress,
+                NextSteps = model.NextSteps,
+                Budget = model.Budget
+            };
+
+            _context.GrantReports.Add(report);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Project report submitted successfully.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        private async Task<int> ApplyCutoffPercentageAsync(decimal cutoffPercentage)
         {
             var grantSummaries = await BuildGrantAllocationSummariesAsync(ArccReviewStatuses);
             var rejectedGrantIds = grantSummaries

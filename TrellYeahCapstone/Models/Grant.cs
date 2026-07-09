@@ -122,6 +122,8 @@ namespace TrellYeahCS4760.Models
 
         public DateTime? ReportDueDate { get; set; }
 
+        public DateTime? AwardDate { get; set; }
+
         public List<BudgetItem> BudgetItems { get; set; } = new();
     }
 }
