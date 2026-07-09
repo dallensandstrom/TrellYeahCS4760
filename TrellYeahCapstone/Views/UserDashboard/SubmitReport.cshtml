@@ -1,1 +1,74 @@
-﻿
+﻿@model TrellYeahCapstone.Models.GrantReportCreateViewModel
+
+@{
+    ViewData["Title"] = "Submit Project Report";
+}
+
+<h1>Submit Project Report</h1>
+
+<form asp-action="SubmitReport" method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" asp-for="GrantId" />
+
+    <div class="mb-3">
+        <label asp-for="ProjectDirector" class="form-label"></label>
+        <input asp-for="ProjectDirector" class="form-control" readonly />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="ProjectTitle" class="form-label"></label>
+        <input asp-for="ProjectTitle" class="form-control" readonly />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="AccountNumber" class="form-label"></label>
+        <input asp-for="AccountNumber" class="form-control" readonly />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="SubmissionDate" class="form-label"></label>
+        <input value="@Model.SubmissionDate.ToString("yyyy-MM-dd")" class="form-control" readonly />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="AwardDate" class="form-label"></label>
+        <input value="@(Model.AwardDate?.ToString("yyyy-MM-dd") ?? "Not awarded")" class="form-control" readonly />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="ProjectSummary" class="form-label"></label>
+        <textarea asp-for="ProjectSummary" class="form-control" rows="4"></textarea>
+        <span asp-validation-for="ProjectSummary" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="CurrentProgress" class="form-label"></label>
+        <textarea asp-for="CurrentProgress" class="form-control" rows="4"></textarea>
+        <span asp-validation-for="CurrentProgress" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="NextSteps" class="form-label"></label>
+        <textarea asp-for="NextSteps" class="form-control" rows="4"></textarea>
+        <span asp-validation-for="NextSteps" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Budget" class="form-label"></label>
+        <textarea asp-for="Budget" class="form-control" rows="4"></textarea>
+        <span asp-validation-for="Budget" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="ReportFile" class="form-label">Report File Submission</label>
+        <input asp-for="ReportFile" type="file" class="form-control" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Submit Report</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

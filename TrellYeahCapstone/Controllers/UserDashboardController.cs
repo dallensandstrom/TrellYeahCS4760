@@ -500,6 +500,27 @@ namespace TrellYeahCS4760.Controllers
                 return View(model);
             }
 
+            string? reportFilePath = null;
+
+            if (model.ReportFile != null && model.ReportFile.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "wwwroot",
+                    "uploads",
+                    "grant-reports");
+
+                Directory.CreateDirectory(uploadsFolder);
+
+                var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(model.ReportFile.FileName)}";
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using var stream = new FileStream(filePath, FileMode.Create);
+                await model.ReportFile.CopyToAsync(stream);
+
+                reportFilePath = $"/uploads/grant-reports/{uniqueFileName}";
+            }
+
             var report = new GrantReport
             {
                 GrantId = grant.GrantId,
@@ -507,7 +528,8 @@ namespace TrellYeahCS4760.Controllers
                 ProjectSummary = model.ProjectSummary,
                 CurrentProgress = model.CurrentProgress,
                 NextSteps = model.NextSteps,
-                Budget = model.Budget
+                Budget = model.Budget,
+                ReportFilePath = reportFilePath
             };
 
             _context.GrantReports.Add(report);

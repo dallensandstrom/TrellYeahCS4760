@@ -70,7 +70,8 @@ namespace TrellYeahCapstone.Controllers
 
                 grant.Description ??= string.Empty;
                 grant.Justification ??= string.Empty;
-                grant.AccountNumber = 0;
+                var currentUser = await _userManager.GetUserAsync(User);
+                grant.AccountNumber = currentUser?.AccountNumber ?? 0;
 
                 grant.ProjectDirectorUserId = string.IsNullOrWhiteSpace(grant.ProjectDirectorUserId)
                     ? currentUserId
@@ -131,6 +132,9 @@ namespace TrellYeahCapstone.Controllers
 
                 grant.Status = isSubmitting ? "Submitted" : "In Progress";
                 grant.SubmittedAt = isSubmitting ? DateTime.Now : null;
+
+                var currentUser = await _userManager.GetUserAsync(User);
+                grant.AccountNumber = currentUser?.AccountNumber ?? grant.AccountNumber;
 
                 _context.Grants.Add(grant);
                 await _context.SaveChangesAsync();
@@ -334,7 +338,8 @@ namespace TrellYeahCapstone.Controllers
 
                 grant.Description ??= string.Empty;
                 grant.Justification ??= string.Empty;
-                grant.AccountNumber = 0;
+                var currentUser = await _userManager.GetUserAsync(User);
+                grant.AccountNumber = currentUser?.AccountNumber ?? 0;
             }
 
             if (isSubmitting &&
