@@ -16,6 +16,11 @@
     <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
 }
 
+@if (TempData["WarningMessage"] != null)
+{
+    <div class="alert alert-warning">@TempData["WarningMessage"]</div>
+}
+
 <section class="mb-5">
     <h2 class="h4">Submitted Grant Applications</h2>
     @if (!Model.SubmittedGrants.Any())
