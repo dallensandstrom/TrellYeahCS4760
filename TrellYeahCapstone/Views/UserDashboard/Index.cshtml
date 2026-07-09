@@ -17,13 +17,11 @@
 </div>
 
 <section>
-    <h2 class="h4">Submitted Grant Applications</h2>
+    @await Html.PartialAsync("_GrantApplicationTable", Model.SubmittedGrants,
+        new ViewDataDictionary(ViewData) { { "SectionTitle", "Submitted Grant Applications" }, { "EmptyMessage", "You do not have any submitted grant applications." } })
 
     @await Html.PartialAsync("_GrantApplicationTable", Model.SavedGrants,
         new ViewDataDictionary(ViewData) { { "SectionTitle", "Saved Grant Applications" }, { "EmptyMessage", "You do not have any saved grant applications." } })
-
-    @await Html.PartialAsync("_GrantApplicationTable", Model.SubmittedGrants,
-        new ViewDataDictionary(ViewData) { { "SectionTitle", "Submitted Grant Applications" }, { "EmptyMessage", "You do not have any submitted grant applications." } })
 
     @await Html.PartialAsync("_GrantApplicationTable", Model.AcceptedGrants,
         new ViewDataDictionary(ViewData) { { "SectionTitle", "Accepted Grant Applications" }, { "EmptyMessage", "You do not have any accepted grant applications." } })
