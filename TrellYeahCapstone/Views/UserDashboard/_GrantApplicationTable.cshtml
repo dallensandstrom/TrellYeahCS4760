@@ -53,6 +53,15 @@
                                     Locked
                                 </button>
                             }
+                            @if (grant.Status == "Approved by ARCC" || grant.Status == "Accepted")
+                            {
+                                <a asp-controller="UserDashboard"
+                                   asp-action="SubmitReport"
+                                   asp-route-grantId="@grant.GrantId"
+                                   class="btn btn-sm btn-success">
+                                    Submit Report
+                                </a>
+                            }
                         </td>
                     </tr>
                 }

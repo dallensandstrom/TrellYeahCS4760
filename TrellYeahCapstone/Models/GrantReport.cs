@@ -9,7 +9,7 @@ namespace TrellYeahCapstone.Models
 
         public int GrantId { get; set; }
 
-        public GrantAllocation? Grant { get; set; }
+        public TrellYeahCS4760.Models.Grant? Grant { get; set; }
 
         public DateTime SubmissionDate { get; set; }
 

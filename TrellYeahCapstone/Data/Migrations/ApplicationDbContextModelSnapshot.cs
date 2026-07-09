@@ -720,7 +720,7 @@ namespace TrellYeahCapstone.Data.Migrations
 
             modelBuilder.Entity("TrellYeahCapstone.Models.GrantReport", b =>
                 {
-                    b.HasOne("TrellYeahCapstone.Models.GrantAllocation", "Grant")
+                    b.HasOne("TrellYeahCS4760.Models.Grant", "Grant")
                         .WithMany()
                         .HasForeignKey("GrantId")
                         .OnDelete(DeleteBehavior.Cascade)
