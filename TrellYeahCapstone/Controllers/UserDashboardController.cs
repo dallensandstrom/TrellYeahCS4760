@@ -324,6 +324,17 @@ namespace TrellYeahCS4760.Controllers
         [Authorize(Roles = "ARCCchair")]
         public async Task<IActionResult> ApplyCriteria()
         {
+            var latestAllocation = await _context.GrantAllocations
+                .OrderByDescending(a => a.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            if (latestAllocation == null)
+            {
+                TempData["ErrorMessage"] = "No allocation round has been started. Please set the available amount first.";
+                return RedirectToAction(nameof(Allocation));
+            }
+
+            var available = latestAllocation.CurrentRoundAmount;
             var criteria = await _context.AllocationCriteria.ToListAsync();
 
             var summaries = await BuildGrantAllocationSummariesAsync(ArccReviewStatuses);
@@ -334,6 +345,8 @@ namespace TrellYeahCS4760.Controllers
                 .Include(g => g.BudgetItems)
                 .ToListAsync();
 
+            // Calculate initial allocations from criteria
+            var allocationMap = new Dictionary<int, decimal?>();
             foreach (var grant in grants)
             {
                 var summary = summaries.First(s => s.GrantId == grant.GrantId);
@@ -349,14 +362,74 @@ namespace TrellYeahCS4760.Controllers
                     {
                         var requested = grant.BudgetItems.Sum(item => item.ARCCAmount);
                         allocated = Math.Round(requested * match.AllocationPercentage / 100, 2);
+                        // Edge case 3: never allocate more than what was requested
+                        allocated = Math.Min(allocated.Value, requested);
                     }
                 }
 
-                grant.AllocatedAmount = allocated;
+                allocationMap[grant.GrantId] = allocated;
+            }
+
+            var totalAllocated = allocationMap.Values.Sum(v => v ?? 0);
+
+            // Edge case 1: criteria would spend more than is available
+            if (totalAllocated > available)
+            {
+                TempData["ErrorMessage"] = $"Cannot apply: criteria would allocate {totalAllocated:C} but only {available:C} is available. Reduce allocation percentages and try again.";
+                return RedirectToAction(nameof(Allocation));
+            }
+
+            // Edge case 2: 5% gap rule — if less than 95% of funds would be used,
+            // top up grants (highest score first) toward their full request
+            var target = Math.Round(available * 0.95m, 2);
+            if (totalAllocated < target)
+            {
+                var remaining = target - totalAllocated;
+
+                var orderedGrants = grants
+                    .Select(g => (Grant: g, Summary: summaries.First(s => s.GrantId == g.GrantId)))
+                    .Where(x => (allocationMap[x.Grant.GrantId] ?? 0) > 0)
+                    .OrderByDescending(x => x.Summary.AverageScorePercentage ?? 0)
+                    .ToList();
+
+                foreach (var (grant, _) in orderedGrants)
+                {
+                    if (remaining <= 0) break;
+                    var requested = grant.BudgetItems.Sum(b => b.ARCCAmount);
+                    var current = allocationMap[grant.GrantId] ?? 0;
+                    // Edge case 3: cap at requested amount
+                    var canAdd = requested - current;
+                    var toAdd = Math.Round(Math.Min(canAdd, remaining), 2);
+                    if (toAdd > 0)
+                    {
+                        allocationMap[grant.GrantId] = current + toAdd;
+                        remaining -= toAdd;
+                    }
+                }
+
+                totalAllocated = allocationMap.Values.Sum(v => v ?? 0);
+
+                // Safety net: if the fill-up somehow exceeded available (shouldn't happen)
+                if (totalAllocated > available)
+                {
+                    TempData["ErrorMessage"] = $"Cannot apply: total would exceed available {available:C}. Please try again.";
+                    return RedirectToAction(nameof(Allocation));
+                }
+
+                if (totalAllocated < target)
+                {
+                    // Edge case 3 prevented closing the gap — warn the user
+                    TempData["WarningMessage"] = $"Gap exceeds 5%: allocated {totalAllocated:C} of {available:C} available. All eligible requests are fully funded but there are insufficient applications to close the gap.";
+                }
+            }
+
+            foreach (var grant in grants)
+            {
+                grant.AllocatedAmount = allocationMap[grant.GrantId];
             }
 
             await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = "Allocation criteria applied to submitted grants.";
+            TempData["SuccessMessage"] = $"Allocation criteria applied. Total allocated: {totalAllocated:C} of {available:C} available.";
             return RedirectToAction(nameof(Allocation));
         }
 
