@@ -210,9 +210,9 @@ namespace TrellYeahCS4760.Controllers
                 .Distinct()
                 .ToList();
 
-            var piNames = await _context.Users
+            var principalInvestigators = await _context.Users
                 .Where(user => piIds.Contains(user.Id))
-                .ToDictionaryAsync(user => user.Id, user => GetUserDisplayName(user));
+                .ToDictionaryAsync(user => user.Id);
 
             var averageScores = await BuildAverageScoreLookupAsync(grantIds);
 
@@ -220,14 +220,16 @@ namespace TrellYeahCS4760.Controllers
                 .Select(g =>
                 {
                     averageScores.TryGetValue(g.GrantId, out var score);
+                    principalInvestigators.TryGetValue(g.PrincipalInvestigatorUserId, out var principalInvestigator);
 
                     return new AllocationGrantSummaryViewModel
                     {
                         GrantId = g.GrantId,
                         Title = g.Title,
-                        PrincipalInvestigatorName = piNames.GetValueOrDefault(
-                            g.PrincipalInvestigatorUserId,
-                            "Unknown user"),
+                        PrincipalInvestigatorName = principalInvestigator == null
+                            ? "Unknown user"
+                            : GetUserDisplayName(principalInvestigator),
+                        PrincipalInvestigatorAccountNumber = principalInvestigator?.AccountNumber ?? 0,
                         MoneyRequestedFromArcc = g.BudgetItems.Sum(item => item.ARCCAmount),
                         MoneyRequestedFromOtherSources = g.BudgetItems.Sum(item =>
                             item.CollegeAmount + item.DepartmentAmount + item.OtherAmount),
@@ -298,6 +300,7 @@ namespace TrellYeahCS4760.Controllers
                 AllocationPercentage = model.NewCriterionAllocationPercentage
             });
 
+            await ClearSubmittedGrantAllocationsAsync();
             await _context.SaveChangesAsync();
             TempData["SuccessMessage"] = "Criterion added.";
             return RedirectToAction(nameof(Allocation));
@@ -312,6 +315,7 @@ namespace TrellYeahCS4760.Controllers
             if (criterion != null)
             {
                 _context.AllocationCriteria.Remove(criterion);
+                await ClearSubmittedGrantAllocationsAsync();
                 await _context.SaveChangesAsync();
             }
 
@@ -478,24 +482,27 @@ namespace TrellYeahCS4760.Controllers
                 .Distinct()
                 .ToList();
 
-            var piNames = await _context.Users
+            var principalInvestigators = await _context.Users
                 .Where(user => piIds.Contains(user.Id))
-                .ToDictionaryAsync(user => user.Id, user => GetUserDisplayName(user));
+                .ToDictionaryAsync(user => user.Id);
 
             var spreadsheet = new StringBuilder();
-            spreadsheet.AppendLine("Title,Principal Investigator,Allocated Money");
+            spreadsheet.AppendLine("Title,Principal Investigator,Account Number,Allocated Money");
 
             foreach (var grant in grants)
             {
-                var principalInvestigator = piNames.GetValueOrDefault(
-                    grant.PrincipalInvestigatorUserId,
-                    "Unknown user");
+                principalInvestigators.TryGetValue(grant.PrincipalInvestigatorUserId, out var principalInvestigator);
+                var principalInvestigatorName = principalInvestigator == null
+                    ? "Unknown user"
+                    : GetUserDisplayName(principalInvestigator);
+                var accountNumber = principalInvestigator?.AccountNumber.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
                 var allocatedAmount = grant.AllocatedAmount.GetValueOrDefault()
-                    .ToString("0.00", CultureInfo.InvariantCulture);
+                    .ToString("C2", CultureInfo.GetCultureInfo("en-US"));
 
                 spreadsheet.AppendLine(string.Join(",",
                     EscapeCsvValue(grant.Title),
-                    EscapeCsvValue(principalInvestigator),
+                    EscapeCsvValue(principalInvestigatorName),
+                    EscapeCsvValue(accountNumber),
                     EscapeCsvValue(allocatedAmount)));
             }
 
@@ -638,6 +645,18 @@ namespace TrellYeahCS4760.Controllers
             }
 
             return grantsToReject.Count;
+        }
+
+        private async Task ClearSubmittedGrantAllocationsAsync()
+        {
+            var grants = await _context.Grants
+                .Where(grant => ArccReviewStatuses.Contains(grant.Status))
+                .ToListAsync();
+
+            foreach (var grant in grants)
+            {
+                grant.AllocatedAmount = null;
+            }
         }
 
         private static DateTime GetReportDueDate(DateTime today)

@@ -8,6 +8,8 @@ namespace TrellYeahCapstone.Models
 
         public string PrincipalInvestigatorName { get; set; } = string.Empty;
 
+        public int PrincipalInvestigatorAccountNumber { get; set; }
+
         public decimal MoneyRequestedFromArcc { get; set; }
 
         public decimal MoneyRequestedFromOtherSources { get; set; }

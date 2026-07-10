@@ -14,7 +14,9 @@ namespace TrellYeahCapstone.Models
 
         public List<AllocationCriterion> AllocationCriteria { get; set; } = [];
 
-        public bool CanFinishAllocating => SubmittedGrants.Any(grant => grant.AllocatedAmount > 0);
+        public bool CanFinishAllocating =>
+            AllocationCriteria.Any() &&
+            SubmittedGrants.Any(grant => grant.AllocatedAmount.HasValue);
 
         public bool CanSendToAccounting => AccountingGrants.Any();
 
