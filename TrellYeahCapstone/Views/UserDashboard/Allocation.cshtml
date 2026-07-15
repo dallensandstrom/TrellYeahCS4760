@@ -4,331 +4,410 @@
     ViewData["Title"] = "Grant Allocation";
 }
 
-<h1>Grant Allocation</h1>
-
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
-}
-
-@if (TempData["ErrorMessage"] != null)
-{
-    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
-}
-
-@if (TempData["WarningMessage"] != null)
-{
-    <div class="alert alert-warning">@TempData["WarningMessage"]</div>
-}
-
-<section class="mb-5">
-    <h2 class="h4">Submitted Grant Applications</h2>
-    @if (!Model.SubmittedGrants.Any())
-    {
-        <div class="alert alert-info">No submitted applications are ready for allocation.</div>
-    }
-    else
-    {
-        <div class="table-responsive">
-            <table class="table table-striped align-middle">
-                <thead>
-                    <tr>
-                        <th>Title</th>
-                        <th>Principal investigator</th>
-                        <th>Requested from ARCC</th>
-                        <th>Requested from other sources</th>
-                        <th>Average score</th>
-                        <th>Allocated money</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var grant in Model.SubmittedGrants)
-                    {
-                        <tr>
-                            <td>@grant.Title</td>
-                            <td>@grant.PrincipalInvestigatorName</td>
-                            <td>@grant.MoneyRequestedFromArcc.ToString("C")</td>
-                            <td>@grant.MoneyRequestedFromOtherSources.ToString("C")</td>
-                            <td>
-                                @if (grant.AverageScorePercentage.HasValue)
-                                {
-                                    <span>@grant.AverageScorePercentage.Value.ToString("0.##")%</span>
-                                    <span class="text-muted">(@grant.ReviewerCount reviewer@(grant.ReviewerCount == 1 ? "" : "s"))</span>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">Not reviewed</span>
-                                }
-                            </td>
-                            <td>
-                                @if (grant.AllocatedAmount.HasValue)
-                                {
-                                    <span>@grant.AllocatedAmount.Value.ToString("C")</span>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">Not allocated</span>
-                                }
-                            </td>
-                            <td>@grant.Status</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
-</section>
-
-<section class="mb-5">
-    <h2 class="h4">Rejected Applications</h2>
-    @if (!Model.RejectedGrants.Any())
-    {
-        <div class="alert alert-info">No applications have been rejected by the ARCC cutoff.</div>
-    }
-    else
-    {
-        <div class="table-responsive">
-            <table class="table table-striped align-middle">
-                <thead>
-                    <tr>
-                        <th>Title</th>
-                        <th>Principal investigator</th>
-                        <th>Requested from ARCC</th>
-                        <th>Requested from other sources</th>
-                        <th>Average score</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var grant in Model.RejectedGrants)
-                    {
-                        <tr>
-                            <td>@grant.Title</td>
-                            <td>@grant.PrincipalInvestigatorName</td>
-                            <td>@grant.MoneyRequestedFromArcc.ToString("C")</td>
-                            <td>@grant.MoneyRequestedFromOtherSources.ToString("C")</td>
-                            <td>
-                                @if (grant.AverageScorePercentage.HasValue)
-                                {
-                                    <span>@grant.AverageScorePercentage.Value.ToString("0.##")%</span>
-                                    <span class="text-muted">(@grant.ReviewerCount reviewer@(grant.ReviewerCount == 1 ? "" : "s"))</span>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">Not reviewed</span>
-                                }
-                            </td>
-                            <td>@grant.Status</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
-</section>
-
-<section class="mb-5">
-    <h2 class="h4">Grant Allocation Criteria</h2>
-    <p class="text-muted">Define score ranges and what percentage of the requested ARCC amount each range receives. Click <strong>Apply Criteria</strong> to compute and save allocated amounts for submitted grants.</p>
-
-    @if (!Model.AllocationCriteria.Any())
-    {
-        <div class="alert alert-info">No criteria defined yet. Add one below.</div>
-    }
-    else
-    {
-        <table class="table table-striped align-middle mb-3">
-            <thead>
-                <tr>
-                    <th>Min score %</th>
-                    <th>Max score %</th>
-                    <th>Allocation %</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var criterion in Model.AllocationCriteria)
-                {
-                    <tr>
-                        <td>@criterion.MinScorePercentage.ToString("0.##")%</td>
-                        <td>@criterion.MaxScorePercentage.ToString("0.##")%</td>
-                        <td>@criterion.AllocationPercentage.ToString("0.##")%</td>
-                        <td>
-                            <form asp-action="DeleteCriterion" method="post" style="display:inline">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@criterion.Id" />
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
-                            </form>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-
-        <form asp-action="ApplyCriteria" method="post" class="mb-3">
-            @Html.AntiForgeryToken()
-            <button type="submit" class="btn btn-success">Apply Criteria</button>
-        </form>
+<style>
+    .allocation-page {
+        margin-left: calc(50% - 50vw);
+        width: 100vw;
+        padding-left: clamp(1rem, 3vw, 3rem);
+        padding-right: clamp(1rem, 3vw, 3rem);
     }
 
-    <h3 class="h5 mt-3">Add a criterion</h3>
-    <form asp-action="AddCriterion" method="post">
-        @Html.AntiForgeryToken()
-        <div class="row g-2 align-items-end">
-            <div class="col-auto">
-                <label asp-for="NewCriterionMinScore" class="form-label"></label>
-                <div class="input-group">
-                    <input asp-for="NewCriterionMinScore" class="form-control" type="number" min="0" max="100" step="0.01" style="width:100px" />
-                    <span class="input-group-text">%</span>
+    .allocation-layout {
+        max-width: 1760px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: minmax(340px, 400px) minmax(0, 1fr);
+        column-gap: clamp(4.5rem, 6vw, 7rem);
+        align-items: start;
+    }
+
+    .allocation-controls {
+        justify-self: center;
+        width: min(100%, 460px);
+    }
+
+    .allocation-tables {
+        justify-self: stretch;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .allocation-tables .table-responsive {
+        overflow-x: visible;
+    }
+
+    .allocation-tables table {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .allocation-tables th,
+    .allocation-tables td {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+
+    @@media (max-width: 991.98px) {
+        .allocation-layout {
+            grid-template-columns: 1fr;
+            row-gap: 2rem;
+        }
+
+        .allocation-controls,
+        .allocation-tables {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="allocation-page">
+<div class="text-center mb-4">
+    <h1>Grant Allocation</h1>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success mx-auto text-start" style="max-width: 900px;">@TempData["SuccessMessage"]</div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger mx-auto text-start" style="max-width: 900px;">@TempData["ErrorMessage"]</div>
+    }
+
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="alert alert-warning mx-auto text-start" style="max-width: 900px;">@TempData["WarningMessage"]</div>
+    }
+</div>
+
+<div class="allocation-layout">
+    <div class="allocation-controls">
+        <section class="mb-5">
+            <h2 class="h4">Grant Allocation Cutoff Percentage</h2>
+            <p class="text-muted">The cutoff only rejects applications that already have at least one ARCC rubric review.</p>
+
+            <form asp-action="Allocation" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="CurrentRoundAmount" class="form-label"></label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input asp-for="CurrentRoundAmount" class="form-control" type="number" min="0" step="0.01" />
+                    </div>
+                    <span asp-validation-for="CurrentRoundAmount" class="text-danger"></span>
                 </div>
-            </div>
-            <div class="col-auto">
-                <label asp-for="NewCriterionMaxScore" class="form-label"></label>
-                <div class="input-group">
-                    <input asp-for="NewCriterionMaxScore" class="form-control" type="number" min="0" max="100" step="0.01" style="width:100px" />
-                    <span class="input-group-text">%</span>
+
+                <div class="mb-3">
+                    <label asp-for="PreviousRoundAmount" class="form-label"></label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input asp-for="PreviousRoundAmount" class="form-control" type="number" min="0" step="0.01" />
+                    </div>
+                    <span asp-validation-for="PreviousRoundAmount" class="text-danger"></span>
                 </div>
-            </div>
-            <div class="col-auto">
-                <label asp-for="NewCriterionAllocationPercentage" class="form-label"></label>
-                <div class="input-group">
-                    <input asp-for="NewCriterionAllocationPercentage" class="form-control" type="number" min="0" max="100" step="0.01" style="width:100px" />
-                    <span class="input-group-text">%</span>
+
+                <div class="mb-3">
+                    <label asp-for="CutoutPercentage" class="form-label"></label>
+                    <div class="input-group">
+                        <input asp-for="CutoutPercentage" class="form-control" type="number" min="0" max="100" step="0.01" />
+                        <span class="input-group-text">%</span>
+                    </div>
+                    <span asp-validation-for="CutoutPercentage" class="text-danger"></span>
                 </div>
-            </div>
-            <div class="col-auto">
+
+                <button type="submit" class="btn btn-primary">Apply cutoff percentage</button>
+            </form>
+        </section>
+
+        <section class="mb-5">
+            <h2 class="h4">Add a Criterion</h2>
+            <form asp-action="AddCriterion" method="post">
+                @Html.AntiForgeryToken()
+                <div class="mb-3">
+                    <label asp-for="NewCriterionMinScore" class="form-label"></label>
+                    <div class="input-group">
+                        <input asp-for="NewCriterionMinScore" class="form-control" type="number" min="0" max="100" step="0.01" />
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="NewCriterionMaxScore" class="form-label"></label>
+                    <div class="input-group">
+                        <input asp-for="NewCriterionMaxScore" class="form-control" type="number" min="0" max="100" step="0.01" />
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="NewCriterionAllocationPercentage" class="form-label"></label>
+                    <div class="input-group">
+                        <input asp-for="NewCriterionAllocationPercentage" class="form-control" type="number" min="0" max="100" step="0.01" />
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
                 <button type="submit" class="btn btn-primary">Add criterion</button>
-            </div>
-        </div>
-    </form>
-</section>
+            </form>
+        </section>
 
-<section class="mb-5">
-    <h2 class="h4">Final Allocation</h2>
-    @if (Model.CanFinishAllocating)
-    {
-        <form asp-action="FinishAllocating" method="post" class="mb-3">
-            @Html.AntiForgeryToken()
-            <button type="submit" class="btn btn-success">Finish allocating</button>
-        </form>
-    }
-    else
-    {
-        <p class="text-muted">No submitted applications currently have allocated money to finalize.</p>
-    }
+        <section class="mb-5">
+            <h2 class="h4">Grant Allocation Criteria</h2>
+            <p class="text-muted">Define score ranges and what percentage of the requested ARCC amount each range receives.</p>
 
-    @if (Model.CanSendToAccounting)
-    {
-        <a asp-action="SendToAccounting" class="btn btn-primary">Send to accounting</a>
-    }
-</section>
-
-@if (Model.AccountingGrants.Any())
-{
-    <section class="mb-5">
-        <h2 class="h4">Finalized Applications</h2>
-        <div class="table-responsive">
-            <table class="table table-striped align-middle">
-                <thead>
-                    <tr>
-                        <th>Title</th>
-                        <th>Principal investigator</th>
-                        <th>Allocated money</th>
-                        <th>Report due date</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var grant in Model.AccountingGrants)
-                    {
-                        <tr>
-                            <td>@grant.Title</td>
-                            <td>@grant.PrincipalInvestigatorName</td>
-                            <td>@grant.AllocatedAmount.GetValueOrDefault().ToString("C")</td>
-                            <td>@(grant.ReportDueDate?.ToString("MMM d, yyyy") ?? "Not set")</td>
-                            <td>@grant.Status</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </section>
-}
-
-<section>
-    <h2 class="h4">Grant Allocation Cutoff Percentage</h2>
-    <p class="text-muted">The cutoff only rejects applications that already have at least one ARCC rubric review.</p>
-
-<div class="row">
-    <div class="col-md-6">
-        <form asp-action="Allocation" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-
-            <div class="mb-3">
-                <label asp-for="CurrentRoundAmount" class="form-label"></label>
-                <div class="input-group">
-                    <span class="input-group-text">$</span>
-                    <input asp-for="CurrentRoundAmount" class="form-control" type="number" min="0" step="0.01" />
+            @if (!Model.AllocationCriteria.Any())
+            {
+                <div class="alert alert-info">No criteria defined yet.</div>
+            }
+            else
+            {
+                <div class="table-responsive mb-3">
+                    <table class="table table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th>Min score %</th>
+                                <th>Max score %</th>
+                                <th>Allocation %</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var criterion in Model.AllocationCriteria)
+                            {
+                                <tr>
+                                    <td>@criterion.MinScorePercentage.ToString("0.##")%</td>
+                                    <td>@criterion.MaxScorePercentage.ToString("0.##")%</td>
+                                    <td>@criterion.AllocationPercentage.ToString("0.##")%</td>
+                                    <td class="text-end">
+                                        <form asp-action="DeleteCriterion" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@criterion.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
-                <span asp-validation-for="CurrentRoundAmount" class="text-danger"></span>
-            </div>
 
-            <div class="mb-3">
-                <label asp-for="PreviousRoundAmount" class="form-label"></label>
-                <div class="input-group">
-                    <span class="input-group-text">$</span>
-                    <input asp-for="PreviousRoundAmount" class="form-control" type="number" min="0" step="0.01" />
+                <form asp-action="ApplyCriteria" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-success">Apply Criteria</button>
+                </form>
+            }
+        </section>
+
+        <section class="mb-5">
+            <h2 class="h4">Final Allocation</h2>
+            @if (Model.CanFinishAllocating)
+            {
+                <form asp-action="FinishAllocating" method="post" class="mb-3">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-success">Finish allocating</button>
+                </form>
+            }
+            else
+            {
+                <p class="text-muted">Apply the current criteria before finishing allocation.</p>
+            }
+        </section>
+
+        <section>
+            <h2 class="h4">Accounting</h2>
+            @if (Model.CanSendToAccounting)
+            {
+                <a asp-action="SendToAccounting" class="btn btn-primary">Send to accounting</a>
+            }
+            else
+            {
+                <p class="text-muted">Finalize allocation before sending awards to accounting.</p>
+            }
+        </section>
+    </div>
+
+    <div class="allocation-tables">
+        <details open class="mb-5">
+            <summary class="h4 mb-3">Submitted Grant Applications</summary>
+            @if (!Model.SubmittedGrants.Any())
+            {
+                <div class="alert alert-info">No submitted applications are ready for allocation.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Principal investigator</th>
+                                <th>Requested from ARCC</th>
+                                <th>Requested from other sources</th>
+                                <th>Average score</th>
+                                <th>Allocated money</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var grant in Model.SubmittedGrants)
+                            {
+                                <tr>
+                                    <td>@grant.Title</td>
+                                    <td>@grant.PrincipalInvestigatorName</td>
+                                    <td>@grant.MoneyRequestedFromArcc.ToString("C")</td>
+                                    <td>@grant.MoneyRequestedFromOtherSources.ToString("C")</td>
+                                    <td>
+                                        @if (grant.AverageScorePercentage.HasValue)
+                                        {
+                                            <span>@grant.AverageScorePercentage.Value.ToString("0.##")%</span>
+                                            <span class="text-muted">(@grant.ReviewerCount reviewer@(grant.ReviewerCount == 1 ? "" : "s"))</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Not reviewed</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (grant.AllocatedAmount.HasValue)
+                                        {
+                                            <span>@grant.AllocatedAmount.Value.ToString("C")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Not allocated</span>
+                                        }
+                                    </td>
+                                    <td>@grant.Status</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
-                <span asp-validation-for="PreviousRoundAmount" class="text-danger"></span>
-            </div>
+            }
+        </details>
 
-            <div class="mb-3">
-                <label asp-for="CutoutPercentage" class="form-label"></label>
-                <div class="input-group">
-                    <input asp-for="CutoutPercentage" class="form-control" type="number" min="0" max="100" step="0.01" />
-                    <span class="input-group-text">%</span>
+        <details open class="mb-5">
+            <summary class="h4 mb-3">Rejected Applications</summary>
+            @if (!Model.RejectedGrants.Any())
+            {
+                <div class="alert alert-info">No applications have been rejected by the ARCC cutoff.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Principal investigator</th>
+                                <th>Requested from ARCC</th>
+                                <th>Requested from other sources</th>
+                                <th>Average score</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var grant in Model.RejectedGrants)
+                            {
+                                <tr>
+                                    <td>@grant.Title</td>
+                                    <td>@grant.PrincipalInvestigatorName</td>
+                                    <td>@grant.MoneyRequestedFromArcc.ToString("C")</td>
+                                    <td>@grant.MoneyRequestedFromOtherSources.ToString("C")</td>
+                                    <td>
+                                        @if (grant.AverageScorePercentage.HasValue)
+                                        {
+                                            <span>@grant.AverageScorePercentage.Value.ToString("0.##")%</span>
+                                            <span class="text-muted">(@grant.ReviewerCount reviewer@(grant.ReviewerCount == 1 ? "" : "s"))</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Not reviewed</span>
+                                        }
+                                    </td>
+                                    <td>@grant.Status</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
-                <span asp-validation-for="CutoutPercentage" class="text-danger"></span>
-            </div>
+            }
+        </details>
 
-            <button type="submit" class="btn btn-primary">Apply cutoff percentage</button>
-        </form>
+        <details open class="mb-5">
+            <summary class="h4 mb-3">Finalized Applications</summary>
+            @if (!Model.AccountingGrants.Any())
+            {
+                <div class="alert alert-info">No applications have been finalized yet.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Principal investigator</th>
+                                <th>Account number</th>
+                                <th>Allocated money</th>
+                                <th>Report due date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var grant in Model.AccountingGrants)
+                            {
+                                <tr>
+                                    <td>@grant.Title</td>
+                                    <td>@grant.PrincipalInvestigatorName</td>
+                                    <td>@grant.PrincipalInvestigatorAccountNumber</td>
+                                    <td>@grant.AllocatedAmount.GetValueOrDefault().ToString("C")</td>
+                                    <td>@(grant.ReportDueDate?.ToString("MMM d, yyyy") ?? "Not set")</td>
+                                    <td>@grant.Status</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </details>
+
+        <details open>
+            <summary class="h4 mb-3">Past Submitted Allocations</summary>
+            @if (!Model.PastAllocations.Any())
+            {
+                <div class="alert alert-info">No allocations have been submitted yet.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th>Submitted</th>
+                                <th>Current Round</th>
+                                <th>Previous Round</th>
+                                <th>Cutoff %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var allocation in Model.PastAllocations)
+                            {
+                                <tr>
+                                    <td>@allocation.CreatedAt.ToString("MMM d, yyyy h:mm tt")</td>
+                                    <td>@allocation.CurrentRoundAmount.ToString("C")</td>
+                                    <td>@allocation.PreviousRoundAmount.ToString("C")</td>
+                                    <td>@allocation.CutoutPercentage.ToString("0.##")%</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </details>
     </div>
 </div>
-</section>
-
-<section class="mt-5">
-    <h2 class="h4">Past Submitted Allocations</h2>
-    @if (!Model.PastAllocations.Any())
-    {
-        <div class="alert alert-info">No allocations have been submitted yet.</div>
-    }
-    else
-    {
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Submitted</th>
-                    <th>Current Round</th>
-                    <th>Previous Round</th>
-                    <th>Cutout %</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var a in Model.PastAllocations)
-                {
-                    <tr>
-                        <td>@a.CreatedAt.ToString("MMM d, yyyy h:mm tt")</td>
-                        <td>@a.CurrentRoundAmount.ToString("C")</td>
-                        <td>@a.PreviousRoundAmount.ToString("C")</td>
-                        <td>@a.CutoutPercentage.ToString("0.##")%</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
-</section>
+</div>
 
 @section Scripts {
     @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }

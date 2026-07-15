@@ -45,7 +45,12 @@
     {
         @foreach (var criterion in Model.Criteria)
         {
-            <div class="border rounded p-3 mb-4">
+            <details open class="border rounded p-3 mb-4">
+                <summary class="h5 mb-3">
+                    @criterion.Name
+                    <span class="text-muted fw-normal">(@criterion.MaximumScore max)</span>
+                </summary>
+
                 <form asp-action="EditCriterion" method="post" class="row g-3 align-items-end mb-3">
                     <input type="hidden" name="id" value="@criterion.RubricCriterionId" />
                     <div class="col-md-3">
@@ -125,7 +130,7 @@
                         <button type="submit" class="btn btn-outline-primary w-100">Add suggestion</button>
                     </div>
                 </form>
-            </div>
+            </details>
         }
     }
 </section>
