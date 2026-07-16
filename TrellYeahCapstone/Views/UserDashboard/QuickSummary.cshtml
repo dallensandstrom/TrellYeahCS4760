@@ -1,0 +1,652 @@
+﻿@model TrellYeahCapstone.Models.ArccChairSummaryViewModel
+@using System.Text.Json
+
+@{
+    ViewData["Title"] = "ARCC Quick Summary";
+
+    var awardsByCollege = Model.AwardsByCollege
+        .Select(row => new object[]
+        {
+            row.Label,
+            row.Amount,
+            row.GrantCount
+        });
+
+    var awardsByDepartment = Model.AwardsByDepartment
+        .Select(row => new object[]
+        {
+            row.Label,
+            row.Amount
+        });
+
+    var fundingSources = Model.FundingSources
+        .Select(row => new object[]
+        {
+            row.Label,
+            row.Amount
+        });
+
+    var applicationStatuses = Model.ApplicationStatuses
+        .Select(row => new object[]
+        {
+            row.Label,
+            row.Count
+        });
+
+    var reportsByStatus = Model.ReportsByStatus
+        .Select(row => new object[]
+        {
+            row.Label,
+            row.Count
+        });
+
+    var jsonOptions = new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+}
+
+<div class="summary-hero mb-4">
+    <div>
+        <div class="text-uppercase small fw-bold summary-kicker">
+            ARCC donor impact overview
+        </div>
+
+        <h1 class="mb-2 text-white">
+            How ARCC funding is being used
+        </h1>
+
+        <p class="mb-0">
+            A quick, presentation-ready summary of awards,
+            matching support, student impact, and project reporting.
+        </p>
+    </div>
+
+    <div class="text-md-end mt-3 mt-md-0">
+        <div class="small">Generated</div>
+        <strong>@DateTime.Now.ToString("MMMM d, yyyy")</strong>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="impact-card h-100">
+            <div class="impact-label">Total awarded</div>
+
+            <div class="impact-value">
+                @Model.TotalAwarded.ToString("C0")
+            </div>
+
+            <div class="impact-note">
+                Across @Model.AwardedGrantCount funded projects
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-lg-3">
+        <div class="impact-card h-100">
+            <div class="impact-label">Additional support</div>
+
+            <div class="impact-value">
+                @Model.TotalMatchingFunds.ToString("C0")
+            </div>
+
+            <div class="impact-note">
+                College, department, and other funding
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-lg-3">
+        <div class="impact-card h-100">
+            <div class="impact-label">Students benefited</div>
+
+            <div class="impact-value">
+                @Model.StudentsBenefited.ToString("N0")
+            </div>
+
+            <div class="impact-note">
+                Reported projected student reach
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-lg-3">
+        <div class="impact-card h-100">
+            <div class="impact-label">Average award</div>
+
+            <div class="impact-value">
+                @Model.AverageAward.ToString("C0")
+            </div>
+
+            <div class="impact-note">
+                @Model.TotalApplications submitted applications
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model.AwardedGrantCount == 0)
+{
+    <div class="alert alert-info">
+        No awarded grants are available yet. This page will
+        populate automatically when grants receive an
+        Approved by ARCC or Accepted status.
+    </div>
+}
+else
+{
+    <div class="row g-4 mb-4">
+        <div class="col-lg-7">
+            <div class="card summary-chart-card h-100">
+                <div class="card-header">
+                    ARCC awards by college
+                </div>
+
+                <div class="card-body">
+                    <div id="awardsByCollegeChart"
+                         class="summary-chart">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card summary-chart-card h-100">
+                <div class="card-header">
+                    Combined project funding
+                </div>
+
+                <div class="card-body">
+                    <div id="fundingSourcesChart"
+                         class="summary-chart">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-7">
+            <div class="card summary-chart-card h-100">
+                <div class="card-header">
+                    Top departments by awarded dollars
+                </div>
+
+                <div class="card-body">
+                    <div id="awardsByDepartmentChart"
+                         class="summary-chart tall">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card summary-chart-card h-100">
+                <div class="card-header">
+                    Application outcomes
+                </div>
+
+                <div class="card-body">
+                    <div id="applicationStatusChart"
+                         class="summary-chart tall">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-5">
+            <div class="card summary-chart-card h-100">
+                <div class="card-header">
+                    Grant report completion
+                </div>
+
+                <div class="card-body">
+                    <div id="reportStatusChart"
+                         class="summary-chart">
+                    </div>
+
+                    <div class="text-center small text-muted mt-2">
+                        @Model.ReportsSubmitted submitted ·
+                        @Model.ReportsOutstanding outstanding
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card h-100">
+                <div class="card-header">
+                    Recent funded projects
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0 align-middle">
+                        <thead>
+                            <tr>
+                                <th>Project</th>
+                                <th>College / Department</th>
+                                <th class="text-end">Award</th>
+                                <th class="text-end">Students</th>
+                                <th>Report</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var grant in Model.RecentAwards)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@grant.Title</strong>
+
+                                        <div class="small text-muted">
+                                            @(grant.AwardDate?.ToString("MMM yyyy")
+                                                ?? "Award date pending")
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        @grant.College
+
+                                        <div class="small text-muted">
+                                            @grant.Department
+                                        </div>
+                                    </td>
+
+                                    <td class="text-end">
+                                        @grant.AwardedAmount.ToString("C0")
+                                    </td>
+
+                                    <td class="text-end">
+                                        @grant.StudentsBenefited.ToString("N0")
+                                    </td>
+
+                                    <td>
+                                        @if (grant.ReportSubmitted)
+                                        {
+                                            <span class="badge bg-success">
+                                                Submitted
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">
+                                                Outstanding
+                                            </span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .summary-hero {
+        background: linear-gradient(120deg, #492365, #6b3f86);
+        color: white;
+        padding: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .summary-kicker {
+        letter-spacing: .12em;
+        opacity: .8;
+    }
+
+    .impact-card {
+        border: 1px solid var(--wsu-frosted-thistle);
+        border-top: 4px solid var(--wsu-purple);
+        background: white;
+        padding: 1.25rem;
+    }
+
+    .impact-label {
+        color: #646464;
+        font-size: .82rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+    }
+
+    .impact-value {
+        color: var(--wsu-purple);
+        font-size: clamp(1.65rem, 3vw, 2.25rem);
+        line-height: 1.1;
+        font-weight: 800;
+        margin: .35rem 0;
+    }
+
+    .impact-note {
+        color: #6c757d;
+        font-size: .85rem;
+    }
+
+    .summary-chart {
+        min-height: 330px;
+        width: 100%;
+    }
+
+    .summary-chart.tall {
+        min-height: 410px;
+    }
+
+    .summary-chart-card .card-body {
+        padding: .5rem 1rem 1rem;
+    }
+
+    @@media (max-width: 767.98px) {
+        .summary-hero {
+            display: block;
+            padding: 1.5rem;
+        }
+
+        .summary-chart,
+        .summary-chart.tall {
+            min-height: 300px;
+        }
+    }
+
+    @@media print {
+        nav,
+        footer {
+            display: none !important;
+        }
+
+        .content-wrapper {
+            max-width: none !important;
+        }
+
+        .summary-hero {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+
+    <script>
+        google.charts.load('current', {
+        packages: ['corechart', 'bar']
+        });
+
+        google.charts.setOnLoadCallback(drawCharts);
+
+        window.addEventListener(
+        'resize',
+        debounce(drawCharts, 180)
+        );
+
+        const awardsByCollege =
+        @Html.Raw(JsonSerializer.Serialize(
+            awardsByCollege,
+            jsonOptions));
+
+        const awardsByDepartment =
+        @Html.Raw(JsonSerializer.Serialize(
+            awardsByDepartment,
+            jsonOptions));
+
+        const fundingSources =
+        @Html.Raw(JsonSerializer.Serialize(
+            fundingSources,
+            jsonOptions));
+
+        const applicationStatuses =
+        @Html.Raw(JsonSerializer.Serialize(
+            applicationStatuses,
+            jsonOptions));
+
+        const reportsByStatus =
+        @Html.Raw(JsonSerializer.Serialize(
+            reportsByStatus,
+            jsonOptions));
+
+        function drawCharts() {
+        drawAwardsByCollegeChart();
+        drawAwardsByDepartmentChart();
+        drawFundingSourcesChart();
+        drawApplicationStatusChart();
+        drawReportStatusChart();
+        }
+
+        function drawAwardsByCollegeChart() {
+        const chartElement =
+        document.getElementById('awardsByCollegeChart');
+
+        if (!awardsByCollege.length || !chartElement) {
+        return;
+        }
+
+        const data =
+        google.visualization.arrayToDataTable([
+        [
+        'College',
+        'Awarded dollars',
+        { role: 'annotation' }
+        ],
+
+        ...awardsByCollege.map(row => [
+        row[0],
+        Number(row[1]),
+        row[2] +
+        ' grant' +
+        (row[2] === 1 ? '' : 's')
+        ])
+        ]);
+
+        const chart =
+        new google.visualization.ColumnChart(chartElement);
+
+        chart.draw(data, moneyBarOptions());
+        }
+
+        function drawAwardsByDepartmentChart() {
+        const chartElement =
+        document.getElementById(
+        'awardsByDepartmentChart');
+
+        if (!awardsByDepartment.length || !chartElement) {
+        return;
+        }
+
+        const data =
+        google.visualization.arrayToDataTable([
+        ['Department', 'Awarded dollars'],
+
+        ...awardsByDepartment.map(row => [
+        row[0],
+        Number(row[1])
+        ])
+        ]);
+
+        const chart =
+        new google.visualization.BarChart(chartElement);
+
+        chart.draw(data, moneyBarOptions(true));
+        }
+
+        function drawFundingSourcesChart() {
+        const chartElement =
+        document.getElementById('fundingSourcesChart');
+
+        if (!fundingSources.length || !chartElement) {
+        return;
+        }
+
+        const data =
+        google.visualization.arrayToDataTable([
+        ['Source', 'Amount'],
+
+        ...fundingSources.map(row => [
+        row[0],
+        Number(row[1])
+        ])
+        ]);
+
+        const chart =
+        new google.visualization.PieChart(chartElement);
+
+        chart.draw(data, pieOptions());
+        }
+
+        function drawApplicationStatusChart() {
+        const chartElement =
+        document.getElementById(
+        'applicationStatusChart');
+
+        if (!applicationStatuses.length || !chartElement) {
+        return;
+        }
+
+        const data =
+        google.visualization.arrayToDataTable([
+        ['Status', 'Applications'],
+        ...applicationStatuses
+        ]);
+
+        const chart =
+        new google.visualization.PieChart(chartElement);
+
+        chart.draw(data, pieOptions());
+        }
+
+        function drawReportStatusChart() {
+        const chartElement =
+        document.getElementById('reportStatusChart');
+
+        const hasReportData =
+        reportsByStatus.some(row => row[1] > 0);
+
+        if (!hasReportData || !chartElement) {
+        return;
+        }
+
+        const data =
+        google.visualization.arrayToDataTable([
+        ['Report status', 'Grants'],
+        ...reportsByStatus
+        ]);
+
+        const options = {
+        ...pieOptions(),
+        pieHole: 0.55
+        };
+
+        const chart =
+        new google.visualization.PieChart(chartElement);
+
+        chart.draw(data, options);
+        }
+
+        function moneyBarOptions(horizontal = false) {
+        return {
+        legend: {
+        position: 'none'
+        },
+
+        chartArea: horizontal
+        ? {
+        left: 155,
+        top: 20,
+        width: '62%',
+        height: '82%'
+        }
+        : {
+        left: 85,
+        top: 25,
+        width: '78%',
+        height: '70%'
+        },
+
+        colors: ['#492365'],
+
+        backgroundColor: 'transparent',
+
+        hAxis: horizontal
+        ? {
+        format: '$#,###',
+        minValue: 0
+        }
+        : {
+        textStyle: {
+        fontSize: 11
+        }
+        },
+
+        vAxis: horizontal
+        ? {
+        textStyle: {
+        fontSize: 11
+        }
+        }
+        : {
+        format: '$#,###',
+        minValue: 0
+        },
+
+        annotations: {
+        alwaysOutside: true,
+        textStyle: {
+        fontSize: 11
+        }
+        }
+        };
+        }
+
+        function pieOptions() {
+        return {
+        chartArea: {
+        left: 15,
+        top: 20,
+        width: '92%',
+        height: '78%'
+        },
+
+        backgroundColor: 'transparent',
+
+        legend: {
+        position: 'bottom',
+        textStyle: {
+        fontSize: 11
+        }
+        },
+
+        pieSliceText: 'percentage',
+
+        colors: [
+        '#492365',
+        '#7f56a0',
+        '#a98abe',
+        '#c9b5d8',
+        '#6c757d',
+        '#9a9a9a'
+        ]
+        };
+        }
+
+        function debounce(callback, delay) {
+        let timeout;
+
+        return function () {
+        clearTimeout(timeout);
+
+        timeout = setTimeout(
+        callback,
+        delay
+        );
+        };
+        }
+    </script>
+}
