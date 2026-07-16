@@ -1,6 +1,4 @@
 <Solution>
-  <Project Path="TrellYeahCapstone.Tests/TrellYeahCapstone.Tests.csproj">
-    <Build Solution="Debug|*" Project="false" />
-  </Project>
+  <Project Path="TrellYeahCapstone.Tests/TrellYeahCapstone.Tests.csproj" />
   <Project Path="TrellYeahCapstone/TrellYeahCapstone.csproj" />
 </Solution>

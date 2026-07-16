@@ -28,4 +28,40 @@
 
     @await Html.PartialAsync("_GrantApplicationTable", Model.RejectedGrants,
         new ViewDataDictionary(ViewData) { { "SectionTitle", "Rejected Grant Applications" }, { "EmptyMessage", "You do not have any rejected grant applications." } })
+
+    <div class="mb-4">
+        <h3 class="h5">Completed Reports</h3>
+        @if (!Model.ReportedGrants.Any())
+        {
+            <div class="alert alert-info">You have not submitted any reports yet.</div>
+        }
+        else
+        {
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Status</th>
+                        <th>Report Submitted</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var (grant, report) in Model.ReportedGrants)
+                    {
+                        <tr>
+                            <td>@grant.Title</td>
+                            <td>@grant.Status</td>
+                            <td>@report.SubmissionDate.ToString("MMM d, yyyy h:mm tt")</td>
+                            <td>
+                                <a asp-controller="Grants" asp-action="Details" asp-route-id="@grant.GrantId" class="btn btn-sm btn-outline-secondary">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
 </section>
