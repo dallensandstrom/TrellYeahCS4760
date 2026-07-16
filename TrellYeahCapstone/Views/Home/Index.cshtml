@@ -9,6 +9,26 @@
 
 <div class="text-center">
     <h1 class="display-4">Grant Application</h1>
+    @if (Model.ReportNotifications.Any())
+    {
+        <div class="mt-3">
+            @foreach (var notification in Model.ReportNotifications)
+            {
+                <div class="alert @notification.AlertClass">
+                    <strong>@notification.Message</strong>
+
+                    Due: @notification.DueDate.ToString("MMMM d, yyyy")
+
+                    <a asp-controller="UserDashboard"
+                       asp-action="SubmitReport"
+                       asp-route-grantId="@notification.GrantId"
+                       class="alert-link ms-2">
+                        Submit Report
+                    </a>
+                </div>
+            }
+        </div>
+    }
     @if (SignInManager.IsSignedIn(User))
     {
         if (User.IsInRole("Admin"))
@@ -85,7 +105,8 @@
         <p>
             To apply for a grant<br />
             <span>
-                <a class="text-dark" asp-area="Identity" asp-page="/Account/Login">Login</a> or <a class="text-dark" asp-area="Identity" asp-page="/Account/Register">Register</a>
+                <a class="text-dark" asp-are
+                a="Identity" asp-page="/Account/Login">Login</a> or <a class="text-dark" asp-area="Identity" asp-page="/Account/Register">Register</a>
             </span>
         </p>
     }

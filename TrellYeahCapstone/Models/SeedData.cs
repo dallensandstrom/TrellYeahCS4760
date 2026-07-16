@@ -327,7 +327,9 @@ namespace TrellYeahCapstone.Models
             grant.SupportingDocument2Path = null;
             grant.SupportingDocument3Path = null;
             grant.IRBApprovalFilePath = null;
-            grant.Status = "Submitted";
+            grant.Status = "Approved by ARCC";
+            grant.AwardDate = DateTime.Today.AddMonths(-11);
+            grant.ReportDueDate = DateTime.Today.AddDays(7);
             grant.SubmittedAt ??= new DateTime(2026, 6, 9, 12, 0, 0);
             grant.AgreementOne = true;
             grant.AgreementTwo = true;

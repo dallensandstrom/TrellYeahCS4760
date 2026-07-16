@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using TrellYeahCapstone.Data;
 using TrellYeahCapstone.Models;
+using TrellYeahCapstone.Services;
 
 namespace TrellYeahCapstone.Controllers
 {
@@ -24,6 +25,7 @@ namespace TrellYeahCapstone.Controllers
             public List<ApplicationUser> DepartmentUsers { get; set; } = new();
             public string? DeanCollegeName { get; set; }
             public List<ApplicationUser> CollegeMembers { get; set; } = new();
+            public List<ReportDeadlineNotification> ReportNotifications { get; set; } = new();
 
         }
 
@@ -49,6 +51,15 @@ namespace TrellYeahCapstone.Controllers
                     model.DeanCollegeName = college.Name;
                     model.CollegeMembers = await _userManager.Users.Where(u => u.CollegeId == college.Id && u.Id != user.Id).ToListAsync(); //Dallen - Get list of all members of the college that are not the dean
                 }
+            }
+            //Dallen - Get list of grants that are approved or accepted and have a report due date
+            if (user != null)
+            {
+                //Dallen - Get list of grants that are approved or accepted and have a report due date, and do not have a report submitted yet
+                var grantsNeedingReports = await _context.Grants.Where(g => g.UserId == user.Id && g.ReportDueDate != null && (g.Status == "Approved by ARCC" || g.Status == "Accepted") && !_context.GrantReports.Any(r => r.GrantId == g.GrantId)).ToListAsync();
+
+                //Dallen - Create a list of report notifications for the grants that need reports, ordered by due date
+                model.ReportNotifications = grantsNeedingReports.Select(g => ReportDeadlineNotificationService.CreateNotification(g, DateTime.Today)).Where(notification => notification != null).Select(notification => notification!).OrderBy(notification => notification.DueDate).ToList();
             }
 
             return View(model);
