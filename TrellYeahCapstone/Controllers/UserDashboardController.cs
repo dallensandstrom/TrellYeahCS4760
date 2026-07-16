@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Globalization;
+using System.Text;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Globalization;
-using System.Text;
 using TrellYeahCapstone.Data;
 using TrellYeahCapstone.Models;
+using TrellYeahCS4760.Models;
 
 namespace TrellYeahCS4760.Controllers
 {
@@ -137,6 +138,228 @@ namespace TrellYeahCS4760.Controllers
             return string.IsNullOrWhiteSpace(fullName)
                 ? user.Email ?? user.UserName ?? user.Id
                 : fullName;
+        }
+
+        [Authorize(Roles = "ARCCchair")]
+        public async Task<IActionResult> QuickSummary()
+        {
+            var grants = await _context.Grants
+                .Include(g => g.BudgetItems)
+                .AsNoTracking()
+                .ToListAsync();
+
+            var users = await _context.Users
+                .AsNoTracking()
+                .ToDictionaryAsync(user => user.Id);
+
+            var colleges = await _context.Colleges
+                .AsNoTracking()
+                .ToDictionaryAsync(
+                    college => college.Id,
+                    college => college.Name);
+
+            var departments = await _context.Departments
+                .AsNoTracking()
+                .ToDictionaryAsync(
+                    department => department.Id,
+                    department => department);
+
+            var submittedReportGrantIds = await _context.GrantReports
+                .AsNoTracking()
+                .Select(report => report.GrantId)
+                .Distinct()
+                .ToListAsync();
+
+            var submittedReportSet = submittedReportGrantIds.ToHashSet();
+
+            var awardedStatuses = new[]
+            {
+        "Approved by ARCC",
+        "Accepted"
+    };
+
+            var awardedGrants = grants
+                .Where(grant => awardedStatuses.Contains(grant.Status))
+                .ToList();
+
+            string GetCollegeName(Grant grant)
+            {
+                if (!users.TryGetValue(
+                        grant.ProjectDirectorUserId,
+                        out var projectDirector) ||
+                    !projectDirector.CollegeId.HasValue)
+                {
+                    return "Unassigned college";
+                }
+
+                return colleges.GetValueOrDefault(
+                    projectDirector.CollegeId.Value,
+                    "Unassigned college");
+            }
+
+            string GetDepartmentName(Grant grant)
+            {
+                if (!users.TryGetValue(
+                        grant.ProjectDirectorUserId,
+                        out var projectDirector) ||
+                    !projectDirector.DepartmentId.HasValue)
+                {
+                    return "Unassigned department";
+                }
+
+                return departments.TryGetValue(
+                    projectDirector.DepartmentId.Value,
+                    out var department)
+                    ? department.Name
+                    : "Unassigned department";
+            }
+
+            var totalAwarded = awardedGrants
+                .Sum(grant => grant.AllocatedAmount ?? 0m);
+
+            var reportsSubmitted = awardedGrants.Count(
+                grant => submittedReportSet.Contains(grant.GrantId));
+
+            var model = new ArccChairSummaryViewModel
+            {
+                TotalApplications = grants.Count(
+                    grant => grant.Status != "In Progress"),
+
+                AwardedGrantCount = awardedGrants.Count,
+
+                TotalAwarded = totalAwarded,
+
+                TotalMatchingFunds = awardedGrants.Sum(grant =>
+                    grant.BudgetItems.Sum(item =>
+                        item.CollegeAmount +
+                        item.DepartmentAmount +
+                        item.OtherAmount)),
+
+                StudentsBenefited = awardedGrants.Sum(
+                    grant => grant.WeberStateStudentsBenefited),
+
+                ReportsSubmitted = reportsSubmitted,
+
+                ReportsOutstanding =
+                    awardedGrants.Count - reportsSubmitted,
+
+                AverageAward = awardedGrants.Count == 0
+                    ? 0m
+                    : totalAwarded / awardedGrants.Count,
+
+                AwardsByCollege = awardedGrants
+                    .GroupBy(GetCollegeName)
+                    .Select(group => new ArccSummaryAmountRow
+                    {
+                        Label = group.Key,
+
+                        Amount = group.Sum(
+                            grant => grant.AllocatedAmount ?? 0m),
+
+                        GrantCount = group.Count()
+                    })
+                    .OrderByDescending(row => row.Amount)
+                    .ToList(),
+
+                AwardsByDepartment = awardedGrants
+                    .GroupBy(GetDepartmentName)
+                    .Select(group => new ArccSummaryAmountRow
+                    {
+                        Label = group.Key,
+
+                        Amount = group.Sum(
+                            grant => grant.AllocatedAmount ?? 0m),
+
+                        GrantCount = group.Count()
+                    })
+                    .OrderByDescending(row => row.Amount)
+                    .Take(10)
+                    .ToList(),
+
+                FundingSources = new List<ArccSummaryAmountRow>
+        {
+            new()
+            {
+                Label = "ARCC awards",
+                Amount = awardedGrants.Sum(
+                    grant => grant.AllocatedAmount ?? 0m)
+            },
+
+            new()
+            {
+                Label = "College contributions",
+                Amount = awardedGrants.Sum(grant =>
+                    grant.BudgetItems.Sum(
+                        item => item.CollegeAmount))
+            },
+
+            new()
+            {
+                Label = "Department contributions",
+                Amount = awardedGrants.Sum(grant =>
+                    grant.BudgetItems.Sum(
+                        item => item.DepartmentAmount))
+            },
+
+            new()
+            {
+                Label = "Other contributions",
+                Amount = awardedGrants.Sum(grant =>
+                    grant.BudgetItems.Sum(
+                        item => item.OtherAmount))
+            }
+        }
+                .Where(row => row.Amount > 0)
+                .ToList(),
+
+                ApplicationStatuses = grants
+                    .Where(grant => grant.Status != "In Progress")
+                    .GroupBy(grant => grant.Status)
+                    .Select(group => new ArccSummaryCountRow
+                    {
+                        Label = group.Key,
+                        Count = group.Count()
+                    })
+                    .OrderByDescending(row => row.Count)
+                    .ToList(),
+
+                ReportsByStatus = new List<ArccSummaryCountRow>
+        {
+            new()
+            {
+                Label = "Submitted",
+                Count = reportsSubmitted
+            },
+
+            new()
+            {
+                Label = "Outstanding",
+                Count = awardedGrants.Count - reportsSubmitted
+            }
+        },
+
+                RecentAwards = awardedGrants
+                    .OrderByDescending(grant =>
+                        grant.AwardDate ??
+                        grant.SubmittedAt ??
+                        DateTime.MinValue)
+                    .Take(8)
+                    .Select(grant => new ArccSummaryGrantRow
+                    {
+                        Title = grant.Title,
+                        College = GetCollegeName(grant),
+                        Department = GetDepartmentName(grant),
+                        AwardedAmount = grant.AllocatedAmount ?? 0m,
+                        StudentsBenefited =
+                            grant.WeberStateStudentsBenefited,
+                        AwardDate = grant.AwardDate,
+                        ReportSubmitted =
+                            submittedReportSet.Contains(grant.GrantId)
+                    })
+                    .ToList()
+            };
+
+            return View(model);
         }
 
         [Authorize(Roles = "ARCCchair")]
