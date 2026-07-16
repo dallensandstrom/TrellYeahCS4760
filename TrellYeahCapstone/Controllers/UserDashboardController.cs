@@ -46,6 +46,17 @@ namespace TrellYeahCS4760.Controllers
                 .ThenByDescending(g => g.GrantId)
                 .ToListAsync();
 
+            var acceptedGrantIds = grants
+                .Where(g => g.Status == "Approved by ARCC" || g.Status == "Accepted")
+                .Select(g => g.GrantId)
+                .ToList();
+
+            var reports = await _context.GrantReports
+                .Where(r => acceptedGrantIds.Contains(r.GrantId))
+                .ToListAsync();
+
+            var reportedGrantIds = reports.Select(r => r.GrantId).ToHashSet();
+
             var viewModel = new UserDashboardViewModel
             {
                 SavedGrants = grants
@@ -61,8 +72,8 @@ namespace TrellYeahCS4760.Controllers
 
                 AcceptedGrants = grants
                 .Where(g =>
-                    g.Status == "Approved by ARCC" ||
-                    g.Status == "Accepted")
+                    (g.Status == "Approved by ARCC" || g.Status == "Accepted") &&
+                    !reportedGrantIds.Contains(g.GrantId))
                 .ToList(),
 
                 RejectedGrants = grants
@@ -71,6 +82,11 @@ namespace TrellYeahCS4760.Controllers
                     g.Status == "Rejected by Dean" ||
                     g.Status == "Rejected by ARCC" ||
                     g.Status == "Rejected")
+                .ToList(),
+
+                ReportedGrants = reports
+                .OrderByDescending(r => r.SubmissionDate)
+                .Select(r => (grants.First(g => g.GrantId == r.GrantId), r))
                 .ToList()
             };
 

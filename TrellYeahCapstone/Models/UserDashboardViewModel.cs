@@ -8,5 +8,6 @@ namespace TrellYeahCapstone.Models
         public List<Grant> SubmittedGrants { get; set; } = new();
         public List<Grant> AcceptedGrants { get; set; } = new();
         public List<Grant> RejectedGrants { get; set; } = new();
+        public List<(Grant Grant, GrantReport Report)> ReportedGrants { get; set; } = new();
     }
 }
