@@ -1,0 +1,126 @@
+@model TrellYeahCapstone.Models.ArccGrantSearchViewModel
+
+@{
+    ViewData["Title"] = "ARCC Grant Search";
+}
+
+<h1>ARCC Grant Search</h1>
+
+<form asp-action="GrantSearch" method="get" class="mb-4">
+    <div class="row g-3 align-items-end">
+        <div class="col-lg-4 col-md-6">
+            <label asp-for="SearchTerm" class="form-label">Search</label>
+            <input asp-for="SearchTerm" class="form-control" placeholder="Title, PI, or Department" />
+        </div>
+
+        <div class="col-lg-2 col-md-6">
+            <label asp-for="Status" class="form-label">Status</label>
+            <select asp-for="Status" asp-items="Model.StatusOptions" class="form-select"></select>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <label asp-for="CollegeId" class="form-label">College</label>
+            <select asp-for="CollegeId" asp-items="Model.CollegeOptions" class="form-select"></select>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <label asp-for="DepartmentId" class="form-label">Department</label>
+            <select asp-for="DepartmentId" asp-items="Model.DepartmentOptions" class="form-select"></select>
+        </div>
+
+        <div class="col-lg-2 col-md-4">
+            <label asp-for="MinAverageScore" class="form-label">Min avg score</label>
+            <div class="input-group">
+                <input asp-for="MinAverageScore" class="form-control" type="number" min="0" max="100" step="0.01" />
+                <span class="input-group-text">%</span>
+            </div>
+        </div>
+
+        <div class="col-lg-2 col-md-4">
+            <label asp-for="MaxAverageScore" class="form-label">Max avg score</label>
+            <div class="input-group">
+                <input asp-for="MaxAverageScore" class="form-control" type="number" min="0" max="100" step="0.01" />
+                <span class="input-group-text">%</span>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-4">
+            <label asp-for="SortBy" class="form-label">Sort by</label>
+            <select asp-for="SortBy" asp-items="Model.SortOptions" class="form-select"></select>
+        </div>
+
+        <div class="col-lg-3 col-md-12 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Search</button>
+            <a asp-action="GrantSearch" class="btn btn-outline-secondary">Clear filters</a>
+        </div>
+    </div>
+</form>
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="h4 mb-0">Results</h2>
+    <span class="text-muted">@Model.Results.Count grant@(Model.Results.Count == 1 ? "" : "s") found</span>
+</div>
+
+@if (!Model.Results.Any())
+{
+    <div class="alert alert-info">No grants matched the current filters.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>Grant title</th>
+                    <th>Status</th>
+                    <th>College</th>
+                    <th>Department</th>
+                    <th>Principal investigator</th>
+                    <th>ARCC requested</th>
+                    <th>Allocated</th>
+                    <th>Avg score</th>
+                    <th>Submitted</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var grant in Model.Results)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">@grant.Title</div>
+                            <div class="text-muted small">Director: @grant.ProjectDirectorName</div>
+                        </td>
+                        <td>@grant.Status</td>
+                        <td>@grant.CollegeName</td>
+                        <td>@grant.DepartmentName</td>
+                        <td>
+                            <div>@grant.PrincipalInvestigatorName</div>
+                            @if (!string.IsNullOrWhiteSpace(grant.PrincipalInvestigatorEmail))
+                            {
+                                <div class="text-muted small">@grant.PrincipalInvestigatorEmail</div>
+                            }
+                        </td>
+                        <td>@grant.MoneyRequestedFromArcc.ToString("C")</td>
+                        <td>@grant.AllocatedAmount.ToString("C")</td>
+                        <td>
+                            @if (grant.AverageScorePercentage.HasValue)
+                            {
+                                <span>@grant.AverageScorePercentage.Value.ToString("0.##")%</span>
+                                <span class="text-muted small">(@grant.ReviewerCount reviewer@(grant.ReviewerCount == 1 ? "" : "s"))</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Not reviewed</span>
+                            }
+                        </td>
+                        <td>
+                            @(grant.SubmittedAt.HasValue
+                                ? grant.SubmittedAt.Value.ToString("MMM d, yyyy")
+                                : "Not submitted")
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

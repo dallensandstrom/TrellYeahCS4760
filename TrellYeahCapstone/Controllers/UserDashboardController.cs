@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using TrellYeahCapstone.Data;
 using TrellYeahCapstone.Models;
@@ -154,6 +155,151 @@ namespace TrellYeahCS4760.Controllers
             return string.IsNullOrWhiteSpace(fullName)
                 ? user.Email ?? user.UserName ?? user.Id
                 : fullName;
+        }
+
+        [Authorize(Roles = "ARCCchair")]
+        public async Task<IActionResult> GrantSearch(ArccGrantSearchViewModel filters)
+        {
+            var grants = await _context.Grants
+                .Include(g => g.BudgetItems)
+                .AsNoTracking()
+                .ToListAsync();
+
+            var userIds = grants
+                .SelectMany(grant => new[] { grant.ProjectDirectorUserId, grant.PrincipalInvestigatorUserId })
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Distinct()
+                .ToList();
+
+            var users = await _context.Users
+                .Where(user => userIds.Contains(user.Id))
+                .AsNoTracking()
+                .ToDictionaryAsync(user => user.Id);
+
+            var colleges = await _context.Colleges
+                .AsNoTracking()
+                .OrderBy(college => college.Name)
+                .ToListAsync();
+
+            var departments = await _context.Departments
+                .Include(department => department.College)
+                .AsNoTracking()
+                .OrderBy(department => department.Name)
+                .ToListAsync();
+
+            var collegeNames = colleges.ToDictionary(college => college.Id, college => college.Name);
+            var departmentNames = departments.ToDictionary(department => department.Id, department => department.Name);
+            var averageScores = await BuildAverageScoreLookupAsync(grants.Select(grant => grant.GrantId).ToList());
+
+            var results = grants
+                .Select(grant =>
+                {
+                    users.TryGetValue(grant.ProjectDirectorUserId, out var projectDirector);
+                    users.TryGetValue(grant.PrincipalInvestigatorUserId, out var principalInvestigator);
+                    averageScores.TryGetValue(grant.GrantId, out var score);
+
+                    return new ArccGrantSearchResultViewModel
+                    {
+                        GrantId = grant.GrantId,
+                        Title = grant.Title,
+                        Status = grant.Status,
+                        CollegeName = projectDirector?.CollegeId is int collegeId
+                            ? collegeNames.GetValueOrDefault(collegeId, "Unassigned college")
+                            : "Unassigned college",
+                        DepartmentName = projectDirector?.DepartmentId is int departmentId
+                            ? departmentNames.GetValueOrDefault(departmentId, "Unassigned department")
+                            : "Unassigned department",
+                        PrincipalInvestigatorName = principalInvestigator == null
+                            ? "Unknown user"
+                            : GetUserDisplayName(principalInvestigator),
+                        PrincipalInvestigatorEmail = principalInvestigator?.Email ?? string.Empty,
+                        ProjectDirectorName = projectDirector == null
+                            ? "Unknown user"
+                            : GetUserDisplayName(projectDirector),
+                        ProjectDirectorEmail = projectDirector?.Email ?? string.Empty,
+                        MoneyRequestedFromArcc = grant.BudgetItems.Sum(item => item.ARCCAmount),
+                        AllocatedAmount = grant.AllocatedAmount ?? 0m,
+                        AverageScorePercentage = score.AveragePercentage,
+                        ReviewerCount = score.ReviewerCount,
+                        SubmittedAt = grant.SubmittedAt
+                    };
+                })
+                .ToList();
+
+            if (!string.IsNullOrWhiteSpace(filters.SearchTerm))
+            {
+                var searchTerm = filters.SearchTerm.Trim();
+                results = results
+                    .Where(result =>
+                        result.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                        result.PrincipalInvestigatorName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                        result.PrincipalInvestigatorEmail.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                        result.ProjectDirectorName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                        result.ProjectDirectorEmail.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(filters.Status))
+            {
+                results = results
+                    .Where(result => result.Status == filters.Status)
+                    .ToList();
+            }
+
+            if (filters.CollegeId.HasValue)
+            {
+                var selectedCollegeName = collegeNames.GetValueOrDefault(filters.CollegeId.Value);
+                results = results
+                    .Where(result => result.CollegeName == selectedCollegeName)
+                    .ToList();
+            }
+
+            if (filters.DepartmentId.HasValue)
+            {
+                var selectedDepartmentName = departmentNames.GetValueOrDefault(filters.DepartmentId.Value);
+                results = results
+                    .Where(result => result.DepartmentName == selectedDepartmentName)
+                    .ToList();
+            }
+
+            if (filters.MinAverageScore.HasValue)
+            {
+                results = results
+                    .Where(result =>
+                        result.AverageScorePercentage.HasValue &&
+                        result.AverageScorePercentage.Value >= filters.MinAverageScore.Value)
+                    .ToList();
+            }
+
+            if (filters.MaxAverageScore.HasValue)
+            {
+                results = results
+                    .Where(result =>
+                        result.AverageScorePercentage.HasValue &&
+                        result.AverageScorePercentage.Value <= filters.MaxAverageScore.Value)
+                    .ToList();
+            }
+
+            filters.Results = filters.SortBy switch
+            {
+                "requested_desc" => results.OrderByDescending(result => result.MoneyRequestedFromArcc).ToList(),
+                "requested_asc" => results.OrderBy(result => result.MoneyRequestedFromArcc).ToList(),
+                "received_desc" => results.OrderByDescending(result => result.AllocatedAmount).ToList(),
+                "received_asc" => results.OrderBy(result => result.AllocatedAmount).ToList(),
+                "score_desc" => results.OrderByDescending(result => result.AverageScorePercentage ?? -1).ToList(),
+                "score_asc" => results.OrderBy(result => result.AverageScorePercentage ?? 101).ToList(),
+                _ => results
+                    .OrderByDescending(result => result.SubmittedAt ?? DateTime.MinValue)
+                    .ThenBy(result => result.Title)
+                    .ToList()
+            };
+
+            filters.StatusOptions = BuildStatusOptions(grants, filters.Status);
+            filters.CollegeOptions = BuildCollegeOptions(colleges, filters.CollegeId);
+            filters.DepartmentOptions = BuildDepartmentOptions(departments, filters.DepartmentId);
+            filters.SortOptions = BuildGrantSearchSortOptions(filters.SortBy);
+
+            return View(filters);
         }
 
         [Authorize(Roles = "ARCCchair")]
@@ -915,6 +1061,87 @@ namespace TrellYeahCS4760.Controllers
             }
 
             return value;
+        }
+
+        private static List<SelectListItem> BuildStatusOptions(List<Grant> grants, string? selectedStatus)
+        {
+            var options = new List<SelectListItem>
+            {
+                new() { Value = string.Empty, Text = "All statuses", Selected = string.IsNullOrWhiteSpace(selectedStatus) }
+            };
+
+            options.AddRange(grants
+                .Select(grant => grant.Status)
+                .Where(status => !string.IsNullOrWhiteSpace(status))
+                .Distinct()
+                .OrderBy(status => status)
+                .Select(status => new SelectListItem
+                {
+                    Value = status,
+                    Text = status,
+                    Selected = status == selectedStatus
+                }));
+
+            return options;
+        }
+
+        private static List<SelectListItem> BuildCollegeOptions(List<College> colleges, int? selectedCollegeId)
+        {
+            var options = new List<SelectListItem>
+            {
+                new() { Value = string.Empty, Text = "All colleges", Selected = !selectedCollegeId.HasValue }
+            };
+
+            options.AddRange(colleges.Select(college => new SelectListItem
+            {
+                Value = college.Id.ToString(CultureInfo.InvariantCulture),
+                Text = college.Name,
+                Selected = college.Id == selectedCollegeId
+            }));
+
+            return options;
+        }
+
+        private static List<SelectListItem> BuildDepartmentOptions(List<Department> departments, int? selectedDepartmentId)
+        {
+            var options = new List<SelectListItem>
+            {
+                new() { Value = string.Empty, Text = "All departments", Selected = !selectedDepartmentId.HasValue }
+            };
+
+            options.AddRange(departments.Select(department => new SelectListItem
+            {
+                Value = department.Id.ToString(CultureInfo.InvariantCulture),
+                Text = department.College == null
+                    ? department.Name
+                    : $"{department.Name} ({department.College.Name})",
+                Selected = department.Id == selectedDepartmentId
+            }));
+
+            return options;
+        }
+
+        private static List<SelectListItem> BuildGrantSearchSortOptions(string selectedSort)
+        {
+            var options = new List<(string Value, string Text)>
+            {
+                ("submitted_desc", "Newest submitted"),
+                ("requested_desc", "ARCC requested highest"),
+                ("requested_asc", "ARCC requested lowest"),
+                ("received_desc", "Allocated highest"),
+                ("received_asc", "Allocated lowest"),
+                ("score_desc", "Average score highest"),
+                ("score_asc", "Average score lowest")
+            };
+
+            return options
+                .Select(option => new SelectListItem
+                {
+                    Value = option.Value,
+                    Text = option.Text,
+                    Selected = option.Value == selectedSort
+                })
+                .ToList();
         }
     }
 }
