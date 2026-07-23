@@ -768,8 +768,8 @@ namespace TrellYeahCS4760.Controllers
                 return RedirectToAction(nameof(Allocation));
             }
 
-            // Edge case 2: 5% gap rule — if less than 95% of funds would be used,
-            // top up grants (highest score first) toward their full request
+            // Edge case 2: 5% gap rule
+            // If less than 95% of funds would be used, top up grants (highest score first) toward their full request
             var target = Math.Round(available * 0.95m, 2);
             if (totalAllocated < target)
             {
@@ -798,7 +798,7 @@ namespace TrellYeahCS4760.Controllers
 
                 totalAllocated = allocationMap.Values.Sum(v => v ?? 0);
 
-                // Safety net: if the fill-up somehow exceeded available (shouldn't happen)
+                // Safety net: if the fill-up somehow exceeded available
                 if (totalAllocated > available)
                 {
                     TempData["ErrorMessage"] = $"Cannot apply: total would exceed available {available:C}. Please try again.";
@@ -807,7 +807,7 @@ namespace TrellYeahCS4760.Controllers
 
                 if (totalAllocated < target)
                 {
-                    // Edge case 3 prevented closing the gap — warn the user
+                    // Warn the user about closing the gap
                     TempData["WarningMessage"] = $"Gap exceeds 5%: allocated {totalAllocated:C} of {available:C} available. All eligible requests are fully funded but there are insufficient applications to close the gap.";
                 }
             }
