@@ -71,6 +71,18 @@
     </div>
 
     <div class="mb-3">
+        <label asp-for="EvaluationCriteria" class="form-label"></label>
+        <textarea asp-for="EvaluationCriteria" class="form-control" rows="4"></textarea>
+        <span asp-validation-for="EvaluationCriteria" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="StudentBenefit" class="form-label"></label>
+        <textarea asp-for="StudentBenefit" class="form-control" rows="4"></textarea>
+        <span asp-validation-for="StudentBenefit" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
         <label asp-for="WeberStateStudentsBenefited" class="form-label"></label>
         <input asp-for="WeberStateStudentsBenefited" class="form-control" min="0" />
         <span asp-validation-for="WeberStateStudentsBenefited" class="text-danger"></span>

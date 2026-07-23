@@ -79,6 +79,14 @@ namespace TrellYeahCS4760.Models
         [StringLength(1000)]
         public string? Timeline { get; set; }
 
+        [Display(Name = "How should this grant be evaluated?")]
+        [StringLength(1000)]
+        public string? EvaluationCriteria { get; set; }
+
+        [Display(Name = "How does this project benefit Weber State University students?")]
+        [StringLength(1000)]
+        public string? StudentBenefit { get; set; }
+
         [Required]
         [StringLength(50)]
         public string Status { get; set; } = "In Progress";
